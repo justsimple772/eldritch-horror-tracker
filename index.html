@@ -3010,6 +3010,35 @@
   .loccell.spec-sah, .locbtn.spec-sah { border-color:#8D4B2B !important; box-shadow:inset 0 0 0 1px #8D4B2B44; }
   .loccell.spec-tel, .locbtn.spec-tel { border-color:#8D4B2B !important; box-shadow:inset 0 0 0 1px #8D4B2B44; }
   .loccell.spec-nile, .locbtn.spec-nile { border-color:#8D4B2B !important; box-shadow:inset 0 0 0 1px #8D4B2B44; }
+
+  #setPop.setpop {
+    inset:auto !important;
+    background:#1A1412 !important;
+    width:auto !important;
+    min-width:148px !important;
+    max-width:72vw !important;
+    height:auto !important;
+    padding:8px !important;
+    display:flex !important;
+    flex-direction:column !important;
+    gap:6px !important;
+    align-items:stretch !important;
+    justify-content:flex-start !important;
+    box-shadow:0 8px 24px rgba(0,0,0,.55);
+  }
+  #setPop.setpop[hidden]{ display:none !important; }
+  #setPop.setpop button { width:100% !important; height:34px !important; }
+  #appVerLab {
+    display:block !important;
+    margin-top:4px !important;
+    padding:6px 4px 2px !important;
+    font-size:12px !important;
+    font-weight:700 !important;
+    color:var(--gold2) !important;
+    text-align:center;
+    word-break:break-all;
+  }
+
 </style>
 </head>
 <body>
@@ -3049,7 +3078,7 @@
   </div>
   <button class="ghost" id="roundBtn" type="button">초기화</button>
   <div class="vitals"><div class="vital"><span>체력</span><b id="hpMax">—</b></div><div class="vital"><span>정신력</span><b id="sanMax">—</b></div></div>
-  <button class="ghost setbtn" id="setBtn" type="button">설정</button>
+  <button class="ghost setbtn" id="setBtn" type="button">설정 <small id="setVerChip" style="display:block;font-size:9px;font-weight:600;opacity:.8;line-height:1.1">ver</small></button>
   <div class="setpop" id="setPop" hidden>
     <button class="ghost" id="scaleBtn" type="button">Aa</button>
     <button class="ghost" id="roomBtn" type="button">방</button>
@@ -5619,7 +5648,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js").catch(function(){});
   });
 }
-const APP_VER="20260913-i";
+const APP_VER="20260913-j";
 function applyAppUpdate(){
   const btn=document.getElementById("updBtn");
   function latest(){
@@ -5656,6 +5685,8 @@ function applyAppUpdate(){
 (function(){
   var lab=document.getElementById("appVerLab");
   if(lab) lab.textContent="버전 "+APP_VER;
+  var chip=document.getElementById("setVerChip");
+  if(chip) chip.textContent=APP_VER;
   try{
     if(sessionStorage.getItem("eh-just-updated")==="1"){
       sessionStorage.removeItem("eh-just-updated");
