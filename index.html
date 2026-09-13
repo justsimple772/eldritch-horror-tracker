@@ -3040,7 +3040,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260913-n">
+<link rel="stylesheet" href="mobile-ui.css?v=20260914-a">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -3170,10 +3170,9 @@
       <span class="dice-grid" id="diceGrid"></span>
     </button>
     <div class="dice-result" id="diceResult">칸을 누르거나 휴대폰을 흔들어 굴리세요</div>
-    <button type="button" class="dice-action dice-roll-again" id="diceRollAgain">주사위 굴리기</button>
     <div class="dice-actions" id="diceActions"></div>
     <button type="button" class="motion-permission" id="motionPermission" hidden>휴대폰 흔들기 켜기</button>
-    <p class="dice-help">결과가 나온 뒤 주사위를 선택하고 리롤 또는 +1을 사용할 수 있습니다.</p>
+    <p class="dice-help">다시 굴리려면 휴대폰을 흔드세요. 리롤 또는 +1 버튼을 누른 뒤 적용할 주사위를 선택하세요.</p>
   </section>
 </div>
 <script>
@@ -4347,6 +4346,40 @@ document.getElementById("whoPass").addEventListener("click", function(e){
 document.getElementById("note").addEventListener("input", function(e){
   state().note=e.target.value; localStorage.setItem(KEY, JSON.stringify(party));
 });
+(function(){
+  const stage=document.getElementById("stage");
+  let gesture=null, suppressClickUntil=0;
+  function blocked(target){
+    return target.closest('input,textarea,select,button,a,[contenteditable],[data-flag],#setPop,#countPop,#roomPop,#locPop,#rqPop,#scalePop') ||
+      !document.getElementById("diceModal").hidden;
+  }
+  stage.addEventListener("touchstart",function(e){
+    gesture=null;
+    if(party.size<=1||e.touches.length!==1||blocked(e.target)) return;
+    const t=e.touches[0];
+    gesture={x:t.clientX,y:t.clientY,time:Date.now()};
+  },{passive:true});
+  stage.addEventListener("touchmove",function(e){
+    if(!gesture) return;
+    if(e.touches.length!==1){ gesture=null; return; }
+    const t=e.touches[0], dx=Math.abs(t.clientX-gesture.x), dy=Math.abs(t.clientY-gesture.y);
+    if(dy>20&&dy>dx) gesture=null;
+  },{passive:true});
+  stage.addEventListener("touchend",function(e){
+    const g=gesture; gesture=null;
+    if(!g||!e.changedTouches.length||blocked(e.target)) return;
+    const t=e.changedTouches[0], dx=t.clientX-g.x, dy=t.clientY-g.y;
+    if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.6||Date.now()-g.time>800) return;
+    e.preventDefault();
+    suppressClickUntil=Date.now()+450;
+    party.active=(party.active+(dx<0?1:-1)+party.size)%party.size;
+    save();
+  },{passive:false});
+  stage.addEventListener("touchcancel",function(){ gesture=null; },{passive:true});
+  stage.addEventListener("click",function(e){
+    if(Date.now()<suppressClickUntil){ e.preventDefault(); e.stopImmediatePropagation(); }
+  },true);
+})();
 document.getElementById("prevBtn").onclick=function(){
   party.active=(party.active-1+party.size)%party.size;
   save();
@@ -5176,6 +5209,13 @@ function renderBoard(){
       die.style.setProperty("--bd-cols",cols);
       die.style.setProperty("--bd-rows",Math.ceil(count/cols));
       die.innerHTML='<div class="bd-kicker">'+label+' · '+threshold+' 이상 성공</div><div class="bd-name">'+active.name+' · '+x.label+'</div><div class="bd-faces">'+x.values.map(function(v){ const success=v>=threshold; return '<span class="bd-face'+(success?' success':'')+'" aria-label="'+v+(success?' 성공':' 실패')+'">'+v+(success?'<span class="bd-check" aria-hidden="true">✓</span>':'')+'</span>'; }).join("")+'</div><div class="bd-result" aria-live="polite"><strong>'+x.successes+'</strong> 성공'+(x.sixExtra?' <small>(6보정 +'+x.sixExtra+')</small>':'')+'</div>';
+      const base=Number.isFinite(x.baseCount)?x.baseCount:x.values.length;
+      const modifier=Number.isFinite(x.modifier)?x.modifier:0;
+      const total=Number.isFinite(x.count)?x.count:x.values.length;
+      const breakdown=document.createElement("div");
+      breakdown.className="bd-breakdown";
+      breakdown.textContent="기술치 "+base+" · 판정 보정 "+(modifier>0?"+":"")+modifier+" · 주사위 "+total+"개";
+      die.appendChild(breakdown);
     } else { die.hidden=true; die.className="board-dice"; die.innerHTML=""; }
   }
   g.querySelectorAll("img[data-bimg]").forEach(function(im){
@@ -5748,7 +5788,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   }
   function publishDiceOverlay(){
     if(modal.hidden||!dice.values.length) diceOverlay=null;
-    else { const q=rqOf(), sixExtra=q.sixBonus?dice.values.filter(function(v){return v===6;}).length:0; diceOverlay={label:dice.label,values:dice.values.slice(),successes:successTotal(),sixExtra:sixExtra,mode:q.mode}; }
+    else { const q=rqOf(), sixExtra=q.sixBonus?dice.values.filter(function(v){return v===6;}).length:0; diceOverlay={label:dice.label,baseCount:dice.baseCount,modifier:dice.count-dice.baseCount,count:dice.count,values:dice.values.slice(),successes:successTotal(),sixExtra:sixExtra,mode:q.mode}; }
     publishSnap();
   }
   function actionInfo(type){
@@ -5761,9 +5801,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     return null;
   }
   function paintDice(){
-    const rollButton=document.getElementById("diceRollAgain");
-    rollButton.disabled=dice.rolling||!dice.count||!!dice.pendingAction;
-    rollButton.textContent=dice.rolling?"굴리는 중…":dice.values.length?"다시 굴리기":"주사위 굴리기";
+
     grid.innerHTML=dice.values.map(function(v,i){
       return '<span class="dice-face'+(isSuccess(v)?' success':'')+(dice.selected.has(i)?' selected':'')+(dice.pendingAction?' dice-target':'')+'" data-die="'+i+'" aria-label="'+v+'">'+v+'</span>';
     }).join("");
@@ -5831,7 +5869,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   function openDice(sid,part){
     const ctx=contextFor(sid,part), slot=state(), sk=slot.skills[sid];
     if(rqOf().ring){ const ring=ensureFlag(slot,"ring"); ring.n=1; ring.used=[false]; save(); }
-    dice={sid:sid,part:part,label:ctx.label,count:ctx.count,values:[],selected:new Set(),rolling:false,pendingAction:""};
+    dice={sid:sid,part:part,label:ctx.label,count:ctx.count,baseCount:ctx.count,values:[],selected:new Set(),rolling:false,pendingAction:""};
     document.getElementById("diceSummary").innerHTML=
       '<span class="dice-chip">현재 주사위 <strong id="diceCurrent">'+ctx.count+'</strong></span>'+
       '<span class="dice-chip">추가 주사위 <strong>'+ctx.added+'</strong></span>'+
@@ -5844,8 +5882,8 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     clearInterval(rollTimer); rollTimer=null; dice.rolling=false;
     modal.hidden=true; diceOverlay=null; publishSnap(); renderBoard(); document.body.classList.remove("dice-open"); render();
   }
-  stage.addEventListener("click",function(e){ if(!e.target.closest("[data-die]")) roll(); });
-  document.getElementById("diceRollAgain").onclick=function(){ roll(); };
+  stage.addEventListener("click",function(e){ if(!dice.values.length&&!e.target.closest("[data-die]")) roll(); });
+
   countAdjust.addEventListener("click",function(e){
     const button=e.target.closest("[data-dice-count]");
     if(button) adjustDiceCount(+button.dataset.diceCount);
@@ -5898,7 +5936,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
       const skill=cell.closest("[data-skill]");
       if(skill){ if(navigator.vibrate) navigator.vibrate(35); openDice(skill.dataset.skill,cell.dataset.part); }
       cancelHold();
-    },1000);
+    },500);
   });
   document.addEventListener("pointermove",function(e){ if(hold&&Math.hypot(e.clientX-startX,e.clientY-startY)>12) cancelHold(); });
   ["pointerup","pointercancel"].forEach(function(ev){ document.addEventListener(ev,cancelHold); });
@@ -5914,7 +5952,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260913-n";
+const APP_VER="20260914-a";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;

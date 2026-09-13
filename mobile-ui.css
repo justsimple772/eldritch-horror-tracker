@@ -366,3 +366,17 @@ body.round-blessed.mobile-ui #stage .cell button { background:#f7ecd8; border-co
 #rqPop .round-condition input:checked + span { border:2px solid var(--gold2); box-shadow:inset 0 -3px 0 var(--gold); }
 #rqPop .round-condition input:checked + span::before { content:'✓ '; margin-right:4px; }
 #rqPop .round-condition input:focus-visible + span { outline:2px solid var(--gold2); outline-offset:3px; }
+
+/* Keep scoreboard labels independent of the controller's condition palette. */
+#boardDiceOverlay { color:#fff7ed; }
+#boardDiceOverlay.blessed { color:#382820; }
+#boardDiceOverlay.cursed { color:#fff1f5; }
+#boardDiceOverlay .bd-name,
+#boardDiceOverlay .bd-kicker,
+#boardDiceOverlay .bd-result,
+#boardDiceOverlay .bd-result strong,
+#boardDiceOverlay .bd-result small { color:inherit; opacity:1; }
+#boardDiceOverlay:not(.blessed) .bd-name,
+#boardDiceOverlay:not(.blessed) .bd-result { text-shadow:0 2px 4px #000; }
+#stage { touch-action:pan-y pinch-zoom; }
+.bd-breakdown { color:inherit; font-size:clamp(18px,2.8vw,36px); line-height:1.35; font-weight:800; margin-top:6px; }
