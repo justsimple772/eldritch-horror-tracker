@@ -1,0 +1,92 @@
+/* Personal tracker: mobile-first layout. Game state and the shared board are unchanged. */
+body.mobile-ui { font-family:system-ui,-apple-system,"Segoe UI","Apple SD Gothic Neo",sans-serif; }
+body.mobile-ui #stage { width:100%; max-width:760px; margin:0 auto; }
+body.mobile-ui button { touch-action:manipulation; }
+body.mobile-ui button:focus-visible { outline:2px solid var(--gold2); outline-offset:3px; }
+body.mobile-ui.tall #stage .top {
+  display:grid; grid-template-columns:64px minmax(0,1fr) 44px; grid-template-rows:auto auto auto;
+  grid-template-areas:"portrait identity settings" "passive passive passive" "toolbar toolbar toolbar";
+  gap:10px 12px; align-items:start; padding:12px; margin:0 0 10px;
+  background:linear-gradient(135deg,#30221b,var(--card)); border:1px solid var(--line); border-radius:16px;
+}
+body.mobile-ui.tall #stage .profile { grid-area:portrait; width:64px !important; height:76px !important; margin:0; align-self:start; }
+body.mobile-ui.tall #stage .profile img,body.mobile-ui.tall #stage .profile .ph { width:64px !important; height:76px !important; border-radius:10px; }
+body.mobile-ui #stage .edit { width:34px; height:34px; right:-3px; bottom:-3px; font-size:18px; line-height:32px; border-radius:10px; }
+body.mobile-ui.tall #stage .who { grid-area:identity; width:auto; max-width:none; min-width:0; padding:0; overflow:visible; }
+body.mobile-ui.tall #stage .who .name { font-family:inherit; font-size:18px; font-weight:800; line-height:1.35; letter-spacing:-.04em; white-space:normal; overflow-wrap:anywhere; color:var(--cream); }
+body.mobile-ui.tall #stage .who .job { display:block !important; margin-top:4px; font-size:11px; line-height:1.5; white-space:normal; color:#C6B49E; }
+body.mobile-ui.tall #stage .vitals { display:flex; gap:12px; margin:6px 0 0; }
+body.mobile-ui.tall #stage .vital { display:flex; align-items:baseline; gap:4px; }
+body.mobile-ui.tall #stage .vital span { font-size:10px; color:#C6B49E; margin:0; }
+body.mobile-ui.tall #stage .vital b { font-family:inherit; font-size:18px; line-height:1; font-weight:800; font-variant-numeric:tabular-nums; }
+body.mobile-ui.tall #stage #setBtn { grid-area:settings; height:44px; width:44px; padding:0; font-size:12px; border-radius:12px; background:#ffffff08; color:var(--gold2); }
+body.mobile-ui.tall #stage #whoPass { grid-area:passive; display:flex !important; flex-wrap:wrap; gap:6px; margin:0; width:100%; max-height:none; overflow:visible; }
+body.mobile-ui.tall #stage #whoPass:empty { display:none !important; }
+body.mobile-ui #stage #whoPass .pb { width:100%; min-height:40px; height:auto; max-height:none; padding:9px 10px; border-radius:10px; text-align:left; font-family:inherit; font-size:12px; line-height:1.5; font-weight:500; color:#E7D5AE; border:1px solid #C4A35A35; background:#C4A35A0D; white-space:normal; word-break:keep-all; }
+body.mobile-ui #stage #whoPass .pb::before { content:"패시브"; display:inline-block; margin-right:8px; font-size:10px; font-weight:800; color:var(--gold2); }
+body.mobile-ui #stage #whoPass .pb.tog::after { content:" · 탭하여 적용"; font-size:10px; color:#BCA582; }
+body.mobile-ui #stage #whoPass .pb.on { background:#5F4D23; border-color:var(--gold2); box-shadow:none; }
+body.mobile-ui #stage #whoPass .pb.on::after { content:" · 적용 중 ✓"; color:#FFF0BF; }
+body.mobile-ui #stage .sheet-toolbar { grid-area:toolbar; display:flex; gap:8px; align-items:center; min-width:0; }
+body.mobile-ui.tall #stage .sheet-toolbar #locBtn { position:static !important; transform:none !important; display:flex !important; align-items:center; justify-content:flex-start; flex:1; width:auto !important; min-width:0 !important; max-width:none !important; height:44px !important; min-height:44px !important; border-radius:10px !important; padding:0 10px !important; font:600 12px/1.3 system-ui,sans-serif !important; text-align:left; white-space:normal; overflow-wrap:anywhere; background:#191512; clip-path:none !important; }
+body.mobile-ui.tall #stage .sheet-toolbar .party { display:flex; flex:none; gap:0; margin:0; border:1px solid #715838; border-radius:10px; overflow:hidden; }
+body.mobile-ui.tall #stage .party .nav,body.mobile-ui.tall #stage .party .lead { height:42px; min-width:0; width:36px; padding:0; margin:0; border:0; border-radius:0; line-height:42px; font:600 22px/42px system-ui,sans-serif; }
+body.mobile-ui.tall #stage .party .lead { width:44px; font-size:12px; letter-spacing:0; border-left:1px solid #715838; border-right:1px solid #715838; }
+body.mobile-ui.tall #stage .party .lead.num { font-size:18px; }
+body.mobile-ui.tall #stage #countBtn { width:46px; height:44px; border-radius:10px; padding:0; font-size:13px; color:var(--cream); }
+body.mobile-ui #stage .count-wrap { flex:none; margin:0; }
+body.mobile-ui.tall #stage .sheet-toolbar #locBtn { word-break:keep-all !important; }
+body.mobile-ui #stage .countpop { right:0; left:auto; max-width:calc(100vw - 32px); }
+body.mobile-ui #stage .rerow { display:flex; flex-wrap:wrap; flex:none; align-items:center; gap:6px; margin:0 0 8px; padding:4px 8px; min-height:44px; height:auto; max-height:none; background:transparent; border:0; border-bottom:1px solid var(--line); }
+body.mobile-ui #stage .rerow .lab { font-size:13px; font-weight:800; color:var(--gold2); }
+body.mobile-ui #stage .round-extra { flex:1; min-width:0; }
+body.mobile-ui #stage #roundBtn { height:36px; padding:0 10px; font-size:11px; background:transparent; border-color:#604D39; border-radius:9px; }
+body.mobile-ui #stage #roundGear { flex:none; position:static; width:36px; height:36px; min-width:36px; margin:0; font-size:16px; border-radius:9px; }
+body.mobile-ui.tall #stage .skills { gap:8px !important; padding:0 1px 16px; scrollbar-width:thin; scrollbar-color:#705C3E transparent; }
+body.mobile-ui.tall #stage .skill,body.mobile-ui.tall #stage .skill.cols2,body.mobile-ui.tall #stage .skill:not(.cols2) {
+  position:relative; display:grid !important; grid-template-columns:minmax(0,var(--sk-gen,1.25fr)) minmax(0,var(--sk-xtr,1fr)) !important;
+  grid-template-rows:24px minmax(86px,1fr) auto !important; grid-template-areas:"name name" "gen extra" "flags flags" !important;
+  gap:6px !important; padding:8px !important; height:auto !important; min-height:var(--sk-h,124px) !important; max-height:none !important; flex:0 0 auto !important;
+  border:1px solid var(--line); border-radius:13px; background:var(--card); overflow:visible !important;
+}
+body.mobile-ui.tall #stage .skill.cols2 { grid-template-areas:"name name" "gen gen" "flags flags" !important; }
+body.mobile-ui.tall #stage .skill.cols2 .extra-ph { display:none !important; }
+body.mobile-ui.tall #stage .skname { justify-self:start; align-self:center; display:inline-flex; width:auto; min-width:0; height:24px; padding:0 9px; font:750 13px/24px system-ui,sans-serif !important; writing-mode:horizontal-tb !important; text-orientation:mixed; letter-spacing:0; border-radius:6px; text-shadow:none; }
+body.mobile-ui.tall #stage .cell.formula-cell,body.mobile-ui.tall #stage .cell.extra-cell {
+  position:relative !important; align-self:stretch; display:flex !important; min-width:0 !important; max-width:none !important; width:auto !important; min-height:86px !important; height:auto !important; padding:18px 5px 4px !important; border-radius:8px; border:1px solid #ffffff0D; overflow:visible !important;
+}
+body.mobile-ui.tall #stage .cell.formula-cell { background:#1B291E; }
+body.mobile-ui.tall #stage .cell.formula-cell .tag { position:absolute !important; display:flex; justify-content:space-between; align-items:center; top:4px; left:6px; right:6px; transform:none; width:auto; max-width:none; height:12px; font:500 10px/12px system-ui,sans-serif !important; color:#D3DDCC; opacity:1; }
+body.mobile-ui.tall #stage .cell.formula-cell .tag span:nth-child(2) { opacity:.65; }
+body.mobile-ui.tall #stage .cell.formula-cell .stepper.formula { grid-template-columns:var(--sk-btn,34px) minmax(0,1fr) var(--sk-btn,34px) !important; grid-template-rows:1fr 1fr !important; gap:4px 2px !important; min-height:72px !important; }
+body.mobile-ui.tall #stage .cell.formula-cell .stepper.formula button,body.mobile-ui.tall #stage .cell.extra-cell button { width:var(--sk-btn,34px) !important; min-width:var(--sk-btn,34px) !important; max-width:var(--sk-btn,34px) !important; height:var(--sk-btn,34px) !important; min-height:var(--sk-btn,34px) !important; max-height:var(--sk-btn,34px) !important; border-radius:8px; font:500 20px/1 system-ui,sans-serif !important; background:#ffffff0A; border:1px solid #ffffff26; padding:0 !important; }
+body.mobile-ui.tall #stage .n.form { display:flex !important; flex-direction:column; align-items:center; justify-content:center; gap:4px; line-height:1; min-width:0; width:100%; }
+body.mobile-ui.tall #stage .n.form .tot,body.mobile-ui.tall #stage .n.extra2 .big { order:-1; font:800 var(--sk-fs,36px)/1 system-ui,sans-serif !important; letter-spacing:-.05em; font-variant-numeric:tabular-nums; color:#FFF2D7; }
+body.mobile-ui.tall #stage .breakdown { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:1px; max-width:100%; line-height:1.3; }
+body.mobile-ui.tall #stage .n.form .a,body.mobile-ui.tall #stage .n.form .b,body.mobile-ui.tall #stage .n.form .c,body.mobile-ui.tall #stage .n.form .d { font:600 11px/1.3 system-ui,sans-serif !important; margin:0; }
+body.mobile-ui.tall #stage .cell.extra-cell .stepper.extra { grid-template-columns:var(--sk-btn,34px) minmax(0,1fr) var(--sk-btn,34px) !important; grid-template-rows:1fr !important; grid-template-areas:"minus num plus" !important; gap:2px !important; align-items:center; }
+body.mobile-ui.tall #stage .cell.extra-cell .tag { position:absolute; top:4px; left:0; right:0; text-align:center; font:600 11px/12px system-ui,sans-serif !important; opacity:1; }
+body.mobile-ui.tall #stage .n.extra2 { gap:4px; min-width:0; }
+body.mobile-ui.tall #stage .n.extra2 .small { display:flex !important; justify-content:center; flex-wrap:wrap; line-height:1.3; }
+body.mobile-ui.tall #stage .n.extra2 .small,body.mobile-ui.tall #stage .n.extra2 .small span { font:500 10px/1.3 system-ui,sans-serif !important; }
+body.mobile-ui.tall #stage .flags { padding:0 !important; gap:5px !important; min-height:0 !important; max-height:none !important; height:auto !important; }
+body.mobile-ui.tall #stage .flags .skgear { position:absolute; top:3px; right:6px; width:34px; height:34px; min-width:34px; padding:0; margin:0; border:none; background:transparent; font-size:16px; }
+body.mobile-ui.tall #stage .flag .ft { height:32px !important; min-height:32px !important; max-height:none !important; padding:0 10px !important; font:600 12px/32px system-ui,sans-serif !important; border-radius:7px; }
+body.mobile-ui #setPop.setpop { position:fixed !important; z-index:200; min-width:190px !important; padding:8px !important; border:1px solid #705C3E; border-radius:14px; }
+body.mobile-ui #setPop.setpop button { height:44px !important; border-radius:8px; padding:0 12px; text-align:left; font:600 13px/1 system-ui,sans-serif; }
+body.mobile-ui #appVerLab { padding:10px 4px 4px !important; border-top:1px solid var(--line); color:var(--muted) !important; font:500 11px/1.5 system-ui,sans-serif !important; }
+@media(max-width:359px){
+  body.mobile-ui.tall #stage .top { grid-template-columns:56px minmax(0,1fr) 40px; gap:8px; padding:10px; }
+  body.mobile-ui.tall #stage .profile,body.mobile-ui.tall #stage .profile img,body.mobile-ui.tall #stage .profile .ph { width:56px !important; height:70px !important; }
+  body.mobile-ui.tall #stage .who .name { font-size:16px; }
+  body.mobile-ui #stage .sheet-toolbar { gap:5px; }
+  body.mobile-ui.tall #stage .party .nav { width:32px; }
+  body.mobile-ui.tall #stage .party .lead { width:38px; }
+  body.mobile-ui.tall #stage .skill { padding:6px !important; gap:5px !important; }
+  body.mobile-ui.tall #stage .cell.formula-cell,body.mobile-ui.tall #stage .cell.extra-cell { padding-left:3px !important; padding-right:3px !important; }
+}
+@media(max-height:700px){
+  html:has(body.mobile-ui),body.mobile-ui { height:auto; min-height:100dvh; overflow-y:auto; }
+  body.mobile-ui #stage { overflow:visible; min-height:100dvh; }
+  body.mobile-ui.tall #stage .skills { flex:none !important; overflow:visible !important; }
+}

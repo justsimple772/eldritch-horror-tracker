@@ -3040,62 +3040,55 @@
   }
 
 </style>
+<link rel="stylesheet" href="mobile-ui.css?v=20260913-l">
 </head>
-<body>
+<body class="mobile-ui">
 <div id="stage">
-<div class="top">
-  <button class="prevpeek" id="prevPeek" type="button">
-    <div class="pp" id="prevPh">?</div>
-    <img class="pp" id="prevImg" alt="">
-  </button>
+<header class="top">
   <div class="profile" id="profileBox">
     <div class="ph" id="profilePh">?</div>
-    <img id="profileImg" alt="" style="display:none">
-    <button class="edit" id="editBtn" type="button">✎</button>
+    <img id="profileImg" alt="조사자 초상화" style="display:none">
+    <button class="edit" id="editBtn" type="button" aria-label="조사자 선택 또는 변경">✎</button>
   </div>
-  <button class="nextpeek" id="nextPeek" type="button">
-    <div class="np" id="nextPh">?</div>
-    <img class="np" id="nextImg" alt="">
-    <div class="nn" id="nextName"></div>
-  </button>
-  <div class="pass" id="whoPass"></div>
-  <div class="head-right">
   <div class="who">
     <div class="name" id="whoName">조사자를 선택하세요</div>
-    <div class="job" id="whoJob">왼쪽 아래 편집</div>
+    <div class="job" id="whoJob">프로필을 눌러 시작하세요</div>
+    <div class="vitals">
+      <div class="vital"><span>체력</span><b id="hpMax">—</b></div>
+      <div class="vital"><span>정신력</span><b id="sanMax">—</b></div>
+    </div>
   </div>
-  <div class="sidebtns"><div class="party">
-    <button class="nav" id="prevBtn" type="button" aria-label="이전 조사자">‹</button>
-    <button class="lead" id="leadBtn" type="button">1</button>
-    <button class="nav" id="nextBtn" type="button" aria-label="다음 조사자">›</button>
+  <button class="ghost setbtn" id="setBtn" type="button" aria-expanded="false" aria-controls="setPop">설정</button>
+  <div class="pass" id="whoPass"></div>
+  <div class="sheet-toolbar">
+    <button class="locbtn" id="locBtn" type="button">위치 선택</button>
+    <div class="party" aria-label="조사자 이동 및 대표 지정">
+      <button class="nav" id="prevBtn" type="button" aria-label="이전 조사자">‹</button>
+      <button class="lead" id="leadBtn" type="button" title="대표 조사자 지정">대표</button>
+      <button class="nav" id="nextBtn" type="button" aria-label="다음 조사자">›</button>
+    </div>
+    <div class="count-wrap">
+      <button class="ghost countbtn" id="countBtn" type="button" aria-label="인원 및 조사자 목록">1인</button>
+      <div class="countpop" id="countPop"></div>
+    </div>
   </div>
-  <div class="head-tools">
-  <button class="locbtn" id="locBtn" type="button">위치</button>
-  <div class="tools-end">
-  <div class="count-wrap">
-    <button class="ghost countbtn" id="countBtn" type="button">1인</button>
-    <div class="countpop" id="countPop"></div>
-  </div>
-  <button class="ghost" id="roundBtn" type="button">초기화</button>
-  <div class="vitals"><div class="vital"><span>체력</span><b id="hpMax">—</b></div><div class="vital"><span>정신력</span><b id="sanMax">—</b></div></div>
-  <button class="ghost setbtn" id="setBtn" type="button">설정 <small id="setVerChip" style="display:block;font-size:9px;font-weight:600;opacity:.8;line-height:1.1">ver</small></button>
   <div class="setpop" id="setPop" hidden>
-    <button class="ghost" id="scaleBtn" type="button">Aa</button>
-    <button class="ghost" id="roomBtn" type="button">방</button>
+    <button class="ghost" id="scaleBtn" type="button">화면 맞춤</button>
+    <button class="ghost" id="roomBtn" type="button">실시간 방</button>
     <button class="ghost" id="updBtn" type="button">업데이트</button>
-    <div id="appVerLab" style="margin-top:8px;font-size:11px;color:var(--muted);letter-spacing:.02em">버전</div>
+    <div id="appVerLab"></div>
   </div>
+  <div hidden>
+    <button id="prevPeek" type="button"><div id="prevPh"></div><img id="prevImg" alt=""></button>
+    <button id="nextPeek" type="button"><div id="nextPh"></div><img id="nextImg" alt=""><div id="nextName"></div></button>
   </div>
-  </div>
-</div>
-  </div>
-</div>
-
+</header>
 <div class="rerow">
   <div class="lab">라운드</div>
-  <div class="round-extra" id="roundExtra"></div><button type="button" class="rgear" id="roundGear" aria-label="라운드 설정">⚙</button>
+  <div class="round-extra" id="roundExtra"></div>
+  <button class="ghost" id="roundBtn" type="button">초기화</button>
+  <button type="button" class="rgear" id="roundGear" aria-label="라운드 설정">⚙</button>
 </div>
-
 <section class="skills" id="skills"></section>
 <textarea class="note" id="note" placeholder="메모"></textarea>
 
@@ -3673,7 +3666,7 @@ function valStepper(s, inv, id, extraPx){
 function formulaStepper(A,B,C,S,T){
   const sb=B>=0?('+'+B):(''+B);
   const sc=C>=0?('+'+C):(''+C);
-  const mid='<div class="n mix form"><span class="a">'+A+'</span><span class="b">'+sb+'</span><span class="c">'+sc+'</span>'+(S>0?'<span class="d">+'+S+'</span>':'')+'<span class="eq">=</span><span class="tot">'+T+'</span></div>';
+  const mid='<div class="n mix form"><span class="breakdown" aria-label="기본, 향상, 장비, 추가 보정"><span class="a">'+A+'</span><span class="b">'+sb+'</span><span class="c">'+sc+'</span>'+(S>0?'<span class="d">+'+S+'</span>':'')+'</span><span class="tot">'+T+'</span></div>';
   return '<div class="stepper formula">'+
     '<div class="fcol imp">'+
       '<button type="button" class="imp" data-act="imp-plus" title="기본 +">+</button>'+
@@ -3829,7 +3822,7 @@ function paintLocBtn(){
   if(L) b.classList.add("t-"+(L.type||"none"));
   if(L && L.spec){ b.classList.add("spec-"+L.id); b.style.borderColor=L.spec; }
   else { b.style.borderColor=""; }
-  b.textContent=locFace(L);
+  b.textContent=L?locFull(L):"위치 선택";
   b.title=L?L.kr:"위치 선택";
 }
 function openLocPop(){
@@ -3905,7 +3898,7 @@ function render(){
     passEl.innerHTML=ps.map(function(x,i){
       const can=!!PFX[inv.id];
       const on=pxOn(state());
-      return '<button type="button" class="pb'+(on&&can?' on':'')+(can?' tog':'')+'" data-px="1">'+x+'</button>';
+      return '<button type="button"'+(can?' aria-pressed="'+(on?"true":"false")+'"':'')+' class="pb'+(on&&can?' on':'')+(can?' tog':'')+'" data-px="1">'+x+'</button>';
     }).join("");
   }
   const leadBtn=document.getElementById("leadBtn");
@@ -3979,14 +3972,14 @@ function render(){
     const bGen=bVal;
     const bEx=extra?pxBonus(slot, sk.id, extra.id):0;
     const any=bVal||bGen||bEx;
-    let html='<div class="skill" data-skill="'+sk.id+'">';
+    let html='<div class="skill'+(!extra?' cols2':'')+'" data-skill="'+sk.id+'">';
     html+='<div class="skname">'+sk.kr+'</div>';
     const A=baseOf(inv, sk.id);
     const B=(s.val||A)-A;
     const C=s.gear||0;
     const S=((s.success&&s.success.n)||0);
     const T=A+B+C+bVal+S;
-    html+='<div class="cell die die-gen formula-cell'+(bVal||bGen?" pxon":"")+'" data-part="val"><div class="tag">기본 / 장비</div>'+formulaStepper(A,B,C,S,T)+'</div>';
+    html+='<div class="cell die die-gen formula-cell'+(bVal||bGen?" pxon":"")+'" data-part="val"><div class="tag"><span>기본</span><span>일반</span><span>장비</span></div>'+formulaStepper(A,B,C,S,T)+'</div>';
     if(extra){
       const eA=s.val||A;
       const eN=(s[extra.id]||0)+bEx;
@@ -5508,39 +5501,17 @@ function applyScale(){
   }
   const adjB=parseInt(localStorage.getItem("eh-skb-adj")||"0",10);
   const adjG=parseInt(localStorage.getItem("eh-skg-adj")||"0",10);
-  const autoH=Math.round(Math.max(56, avail/5.08));
-  const autoF=Math.round(Math.max(13, Math.min(28, autoH*0.30)));
-  const h=Math.max(52, autoH+adjH*2);
-  const f=Math.max(11, Math.min(44, autoF+adjF));
-  const b=Math.max(14, Math.min(52, 18+adjB));
-  document.documentElement.style.setProperty("--sk-h", h+"px");
-  document.documentElement.style.setProperty("--sk-fs", f+"px");
-  document.documentElement.style.setProperty("--sk-btn", b+"px");
-  const gen=Math.max(0.35, 1.20 + adjG*0.08);
-  const xtr=Math.max(0.35, 1.00 - adjG*0.08);
-  document.documentElement.style.setProperty("--sk-gen", gen+"fr");
-  document.documentElement.style.setProperty("--sk-xtr", xtr+"fr");
-  document.documentElement.style.setProperty("--sk-flag", Math.max(10, Math.round(f*0.72))+"px");
-  document.documentElement.style.setProperty("--sk-tag", Math.max(8, Math.round(f*0.50))+"px");
-  document.querySelectorAll("#stage .skill, #stage .cell, #stage .die, #stage .formula-cell, #stage .extra-cell").forEach(function(el){
-    el.style.removeProperty("min-height");
-    el.style.removeProperty("max-height");
-    el.style.removeProperty("height");
-  });
-  let st=document.getElementById("scaleSheet");
-  if(!st){ st=document.createElement("style"); st.id="scaleSheet"; document.head.appendChild(st); }
-  st.textContent=
-    "html body #stage .skill{height:"+h+"px !important;min-height:"+h+"px !important;max-height:"+h+"px !important;flex:0 0 "+h+"px !important;}"+
-    "#stage .cell.formula-cell .stepper.formula button,#stage .cell.extra-cell button{width:"+b+"px !important;height:"+b+"px !important;min-width:"+b+"px !important;min-height:"+b+"px !important;max-width:"+b+"px !important;max-height:"+b+"px !important;}"+
-    "#stage .flag .ft,#stage .flag.en .ft,#stage .flag.simple .ft{height:"+b+"px !important;min-height:"+b+"px !important;max-height:"+b+"px !important;font-size:"+Math.max(9,Math.round(f*0.70))+"px !important;line-height:"+b+"px !important;padding:0 "+Math.max(6,Math.round(b*0.4))+"px !important;}"+
-    "#stage .flag,#stage .rerow .flag,#stage .flags .flag{height:auto !important;padding:0 !important;background:transparent !important;}"+
-    "#stage .n.form .tot{font-size:"+Math.round(f*1.85)+"px !important;}"+
-    "#stage .n.extra2 .big{font-size:"+Math.round(f*1.75)+"px !important;}"+
-    "#stage .n.form .a,#stage .n.form .b,#stage .n.form .c,#stage .n.form .d{font-size:"+Math.max(10,Math.round(f*0.58))+"px !important;}"+
-    "#stage .n.form .eq{font-size:"+Math.max(10,Math.round(f*0.5))+"px !important;}"+
-    "#stage .n.extra2 .small,#stage .n.extra2 .ea,#stage .n.extra2 .eb,#stage .n.extra2 .ec{font-size:"+Math.max(9,Math.round(f*0.48))+"px !important;}"+
-    "#stage .skname{font-size:"+Math.max(12,Math.round(f*0.85))+"px !important;}"+
-    "#stage .cell .tag,#stage .cell.extra-cell .tag,#stage .cell.formula-cell .tag{font-size:"+Math.max(8,Math.round(f*0.36))+"px !important;}";
+  const h=Math.max(124,Math.min(180,Math.round(avail/5))+adjH*2);
+  const narrow=window.innerWidth<360;
+  const f=Math.max(26,Math.min(narrow?36:window.innerWidth<430?42:52,36+adjF));
+  const b=Math.max(30,Math.min(narrow?34:window.innerWidth<430?38:46,34+adjB));
+  document.documentElement.style.setProperty("--sk-h",h+"px");
+  document.documentElement.style.setProperty("--sk-fs",f+"px");
+  document.documentElement.style.setProperty("--sk-btn",b+"px");
+  document.documentElement.style.setProperty("--sk-gen",Math.max(.8,1.25+adjG*.025)+"fr");
+  document.documentElement.style.setProperty("--sk-xtr",Math.max(.7,1-adjG*.025)+"fr");
+  document.documentElement.style.setProperty("--sk-flag","12px");
+  document.documentElement.style.setProperty("--sk-tag","11px");
   const hv=document.getElementById("skHval"), fv=document.getElementById("skFval"), bv=document.getElementById("skBval"), gv=document.getElementById("skGval");
   const hi=document.getElementById("skH"), fi=document.getElementById("skF"), bi=document.getElementById("skB"), gi=document.getElementById("skG");
   if(hv) hv.textContent=(adjH>=0?("+ "+adjH):String(adjH));
@@ -5555,20 +5526,21 @@ function applyScale(){
 (function(){
   const setBtn=document.getElementById("setBtn");
   const setPop=document.getElementById("setPop");
-  function closeSet(){ if(setPop) setPop.hidden=true; }
+  function closeSet(){ if(setPop) setPop.hidden=true; if(setBtn) setBtn.setAttribute("aria-expanded","false"); }
   if(setBtn && setPop){
     function placeSet(){
       const r=setBtn.getBoundingClientRect();
-      setPop.style.top=(r.bottom+4)+"px";
-      setPop.style.right=(Math.max(8, window.innerWidth-r.right))+"px";
-      setPop.style.left="auto";
-      setPop.style.bottom="auto";
+      setPop.style.setProperty("top",Math.min(r.bottom+8,Math.max(8,window.innerHeight-setPop.offsetHeight-8))+"px","important");
+      setPop.style.setProperty("right",Math.max(8,window.innerWidth-r.right)+"px","important");
+      setPop.style.setProperty("left","auto","important");
+      setPop.style.setProperty("bottom","auto","important");
       setPop.style.height="auto";
     }
     setBtn.onclick=function(e){
       e.stopPropagation();
       const next=setPop.hidden;
       setPop.hidden=!next?true:false;
+      setBtn.setAttribute("aria-expanded",String(!setPop.hidden));
       if(!setPop.hidden) placeSet();
     };
   }
@@ -5577,6 +5549,7 @@ function applyScale(){
     if(e.target.closest("#setPop") || e.target.closest("#setBtn")) return;
     closeSet();
   });
+  document.addEventListener("keydown",function(e){if(e.key==="Escape") closeSet();});
   window._closeSetPop=closeSet;
 })();
 document.getElementById("scaleBtn").onclick=function(e){
@@ -5648,7 +5621,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260913-k";
+const APP_VER="20260913-l";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;
@@ -5685,8 +5658,6 @@ async function applyAppUpdate(){
 (function(){
   var lab=document.getElementById("appVerLab");
   if(lab) lab.textContent="버전 "+APP_VER;
-  var chip=document.getElementById("setVerChip");
-  if(chip) chip.textContent=APP_VER;
   try{
     const target=sessionStorage.getItem("eh-update-target");
     sessionStorage.removeItem("eh-just-updated");
