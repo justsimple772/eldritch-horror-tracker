@@ -5645,42 +5645,42 @@ requestAnimationFrame(function(){ applyScale(); requestAnimationFrame(applyScale
 
 if("serviceWorker" in navigator){
   window.addEventListener("load", function(){
-    navigator.serviceWorker.register("./sw.js").catch(function(){});
+    navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260913-j";
-function applyAppUpdate(){
+const APP_VER="20260913-k";
+let updateBusy=false;
+async function applyAppUpdate(){
+  if(updateBusy) return;
+  updateBusy=true;
   const btn=document.getElementById("updBtn");
-  function latest(){
-    alert("이미 최신버전입니다");
-    if(btn) btn.textContent="업데이트";
-  }
-  function goReload(){
-    try{ sessionStorage.setItem("eh-just-updated","1"); }catch(e){}
-    location.reload();
-  }
-  fetch("./index.html?v="+Date.now(), {cache:"no-store"}).then(function(r){ return r.text(); }).then(function(txt){
-    const m=txt.match(/APP_VER="([^"]+)"/);
-    const remote=m?m[1]:"";
-    if(remote && remote===APP_VER){
-      latest();
-      return;
+  if(btn){ btn.disabled=true; btn.textContent="확인 중…"; }
+  const controller=new AbortController();
+  const timeout=setTimeout(function(){ controller.abort(); },15000);
+  try{
+    const url=new URL("./index.html",location.href);
+    url.searchParams.set("eh-update",String(Date.now()));
+    const response=await fetch(url.href,{cache:"no-store",signal:controller.signal});
+    if(!response.ok) throw new Error("HTTP "+response.status);
+    const text=await response.text();
+    const match=text.match(/const APP_VER="([^"]+)"/);
+    if(!match) throw new Error("버전 정보를 찾을 수 없습니다");
+    const remote=match[1];
+    if(remote===APP_VER){ alert("이미 최신버전입니다"); return; }
+    // Only unregister this app's worker; localStorage game data is untouched.
+    if("serviceWorker" in navigator){
+      const reg=await navigator.serviceWorker.getRegistration();
+      if(reg && reg.scope===new URL("./",location.href).href) await reg.unregister();
     }
-    if(!("serviceWorker" in navigator)){
-      goReload();
-      return;
-    }
-    navigator.serviceWorker.getRegistration().then(function(reg){
-      if(!reg){ goReload(); return; }
-      return reg.update().then(function(){
-        const w=reg.waiting || reg.installing;
-        if(w) w.postMessage({type:"SKIP_WAITING"});
-        setTimeout(goReload, 400);
-      });
-    }).catch(function(){ goReload(); });
-  }).catch(function(){
-    latest();
-  });
+    sessionStorage.setItem("eh-update-target",remote);
+    location.replace(url.href);
+  }catch(error){
+    alert("업데이트를 확인하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요. 기존 게임 데이터는 유지됩니다.");
+  }finally{
+    clearTimeout(timeout);
+    updateBusy=false;
+    if(btn){ btn.disabled=false; btn.textContent="업데이트"; }
+  }
 }
 (function(){
   var lab=document.getElementById("appVerLab");
@@ -5688,9 +5688,16 @@ function applyAppUpdate(){
   var chip=document.getElementById("setVerChip");
   if(chip) chip.textContent=APP_VER;
   try{
-    if(sessionStorage.getItem("eh-just-updated")==="1"){
-      sessionStorage.removeItem("eh-just-updated");
-      setTimeout(function(){ alert("업데이트 완료됐습니다."); }, 200);
+    const target=sessionStorage.getItem("eh-update-target");
+    sessionStorage.removeItem("eh-just-updated");
+    if(target){
+      sessionStorage.removeItem("eh-update-target");
+      setTimeout(function(){ alert(target===APP_VER ? "업데이트 완료됐습니다." : "새 버전이 아직 반영되지 않았습니다. 잠시 후 다시 시도해 주세요."); },200);
+    }
+    const clean=new URL(location.href);
+    if(clean.searchParams.has("eh-update")){
+      clean.searchParams.delete("eh-update");
+      history.replaceState(null,"",clean.href);
     }
   }catch(e){}
   const b=document.getElementById("updBtn");
