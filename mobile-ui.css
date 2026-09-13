@@ -91,6 +91,81 @@ body.mobile-ui #appVerLab { padding:10px 4px 4px !important; border-top:1px soli
   body.mobile-ui.tall #stage .skills { flex:none !important; overflow:visible !important; }
 }
 
+/* Dice roller */
+.dice-modal[hidden] { display:none !important; }
+.dice-modal {
+  position:fixed; inset:0; z-index:10000; display:grid; place-items:end center;
+  padding:12px; background:rgba(3,5,7,.78); backdrop-filter:blur(7px);
+}
+.dice-sheet {
+  width:min(100%,560px); max-height:calc(100dvh - 24px); overflow:auto;
+  padding:16px; border:1px solid color-mix(in srgb,var(--gold) 52%,transparent);
+  border-radius:20px; background:linear-gradient(165deg,color-mix(in srgb,var(--card) 94%,#111),color-mix(in srgb,var(--bg) 96%,#000));
+  box-shadow:0 22px 70px rgba(0,0,0,.58);
+}
+.dice-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.dice-kicker { color:var(--gold2); font-size:11px; letter-spacing:.12em; }
+.dice-head h2 { margin:2px 0 0; color:var(--cream); font-size:23px; line-height:1.1; }
+.dice-close,.motion-permission,.dice-action {
+  border:1px solid var(--line); color:var(--cream); background:var(--btn); font-weight:800;
+}
+.dice-close { min-width:58px; height:40px; border-radius:10px; }
+.dice-summary { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 9px; }
+.dice-chip { padding:5px 8px; border:1px solid var(--line); border-radius:999px; color:var(--muted); background:rgba(0,0,0,.18); font-size:11px; }
+.dice-chip strong { color:var(--gold2); font-size:13px; }
+.dice-count-adjust { display:flex; align-items:center; justify-content:center; gap:8px; margin:0 0 10px; color:var(--muted); font-size:12px; font-weight:800; }
+.dice-count-adjust button { width:34px; height:34px; border:1px solid var(--line); border-radius:9px; color:var(--cream); background:var(--btn); font-size:20px; font-weight:900; }
+.dice-count-adjust button:disabled { opacity:.35; }
+.dice-count-adjust output { min-width:44px; color:var(--gold2); font-size:16px; text-align:center; }
+.dice-stage {
+  display:block; width:100%; min-height:210px; padding:14px; border:1px solid color-mix(in srgb,var(--gold) 42%,var(--line));
+  border-radius:16px; color:var(--cream); background:radial-gradient(circle at 50% 35%,color-mix(in srgb,var(--btn) 75%,#222),color-mix(in srgb,var(--bg) 91%,#000));
+  touch-action:manipulation;
+}
+.dice-ready { display:block; color:var(--gold2); font-size:18px; font-weight:900; }
+.dice-ready:has(+ .dice-grid:not(:empty)) { display:none; }
+.dice-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(54px,1fr)); gap:9px; align-content:center; }
+.dice-face {
+  position:relative; display:grid; place-items:center; aspect-ratio:1; min-width:0;
+  border:2px solid #d9d1b8; border-radius:13px; color:#171412; background:#f5efdd;
+  box-shadow:inset 0 -5px 0 rgba(0,0,0,.13),0 5px 12px rgba(0,0,0,.27);
+  font:900 clamp(22px,8vw,38px)/1 system-ui,sans-serif;
+}
+.dice-face.selected { outline:3px solid var(--gold); outline-offset:2px; transform:translateY(-2px); }
+.dice-face.success { color:#0b603d; background:#efffdc; border-color:#b9d778; }
+.dice-face.dice-target { outline:3px dashed var(--gold2); outline-offset:2px; cursor:pointer; }
+.dice-grid.rolling .dice-face { animation:dice-tumble .23s cubic-bezier(.42,0,.58,1) infinite alternate; }
+.dice-grid:not(.rolling) .dice-face { animation:dice-land .2s cubic-bezier(.2,.8,.35,1.35); }
+@keyframes dice-tumble { from{transform:translateY(-12px) rotate(-13deg) scale(.86)} 55%{transform:translateY(7px) rotate(9deg) scale(1.05)} to{transform:translateY(-4px) rotate(-5deg) scale(.96)} }
+@keyframes dice-land { from{transform:translateY(-9px) rotate(6deg) scale(1.05)} 65%{transform:translateY(3px) rotate(-2deg) scale(.99)} to{transform:translateY(0) rotate(0) scale(1)} }
+.dice-result { min-height:31px; padding:10px 2px 6px; text-align:center; color:var(--muted); font-size:13px; font-weight:700; }
+.dice-result strong { color:var(--gold2); font-size:19px; }
+.dice-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+.dice-action { min-height:44px; padding:6px; border-radius:10px; font-size:12px; }
+.dice-action:disabled { opacity:.35; }
+.dice-action.selecting { border-color:var(--gold2); background:color-mix(in srgb,var(--gold) 28%,var(--btn)); box-shadow:0 0 14px color-mix(in srgb,var(--gold2) 48%,transparent); }
+.dice-action b { display:block; color:var(--gold2); font-size:15px; }
+.motion-permission { width:100%; min-height:40px; margin-top:8px; border-radius:10px; }
+.dice-help { margin:9px 2px 0; color:var(--muted); font-size:10px; line-height:1.4; text-align:center; }
+.cell.dice-holding { outline:2px solid var(--gold); outline-offset:-2px; filter:brightness(1.16); }
+body.dice-open { overflow:hidden !important; }
+body.round-blessed { --bg:#111722; --card:#1b2635; --gold:#f7f8fa; --gold2:#ffffff; --cream:#ffffff; --muted:#cad9e8; --line:#9bb7d3; --btn:#30465d; }
+body.round-cursed { --bg:#210b15; --card:#35101e; --gold:#a94a65; --gold2:#f0a0b2; --cream:#f8dce3; --muted:#c28a9b; --line:#713044; --btn:#491525; }
+body.round-blessed #stage,body.round-blessed .dice-sheet { box-shadow:0 0 28px rgba(179,224,255,.23); }
+body.round-cursed #stage,body.round-cursed .dice-sheet { box-shadow:0 0 28px rgba(185,39,79,.25); }
+.round-mode { padding:2px 5px; border:1px solid var(--gold); border-radius:5px; color:var(--gold2); font-size:10px; font-weight:800; white-space:nowrap; }
+.round-state { display:inline-block; margin-left:6px; padding:2px 5px; border-radius:5px; font-size:10px; vertical-align:middle; }
+.round-state.blessed { color:#fff; border:1px solid #dcefff; background:#54718f; }.round-state.cursed { color:#ffd9e2; border:1px solid #b75570; background:#58182b; }
+.board-dice { position:fixed; inset:0; z-index:90; display:none; align-items:center; justify-content:center; flex-direction:column; padding:20px; text-align:center; background:rgba(5,8,12,.9); }
+.board-dice.on { display:flex; }.board-dice.blessed { background:rgba(25,45,66,.93); color:#fff; }.board-dice.cursed { background:rgba(53,8,24,.94); color:#ffe3e9; }
+.bd-kicker { font-size:18px; font-weight:800; }.bd-name { margin:6px 0 18px; font-size:28px; font-weight:900; }.bd-faces { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; max-width:900px; }.bd-face { display:grid; place-items:center; width:82px; height:82px; border-radius:16px; background:#f7f2e8; color:#18130f; font-size:42px; font-weight:900; }.bd-result { margin-top:22px; font-size:34px; font-weight:900; }.bd-result small { font-size:18px; }
+.bcard.blessed { border-color:#b9d9f5; box-shadow:0 0 14px rgba(220,240,255,.25); }.bcard.cursed { border-color:#9e3c58; box-shadow:0 0 14px rgba(184,40,78,.25); }
+@media(min-width:700px){ .dice-modal{place-items:center}.dice-sheet{padding:20px}.dice-stage{min-height:250px} }
+@media(max-height:620px){
+  .dice-modal{padding:5px}.dice-sheet{max-height:calc(100dvh - 10px);padding:11px;border-radius:14px}
+  .dice-stage{min-height:145px}.dice-summary{margin:7px 0}.dice-help{display:none}.dice-result{padding-top:6px}
+}
+
 /* Dense mobile sheet: fit all five skills into the available viewport. */
 body.mobile-ui { padding-bottom:0 !important; }
 body.mobile-ui #stage { height:100%; min-height:0; }
@@ -224,3 +299,70 @@ body.mobile-ui #scalePop .scale-actions button { width:100%; height:40px; margin
   body.mobile-ui #stage { height:100%; min-height:0; overflow:hidden; }
   body.mobile-ui.tall #stage .skills { flex:1 1 auto !important; overflow:hidden !important; }
 }
+
+/* Bright platinum blessing and a dice tray with a reserved tap margin. */
+body.round-blessed { --bg:#f5f5f3; --card:#ffffff; --gold:#697078; --gold2:#343e49; --cream:#27313b; --muted:#5a6570; --line:#c5cbd1; --btn:#e9edf0; background:radial-gradient(ellipse at top,#fff 30%,#e8ebee 100%) !important; color:var(--cream); }
+body.round-blessed #stage, body.round-blessed .dice-sheet { box-shadow:0 0 32px rgba(255,255,255,.95),0 0 12px rgba(177,182,188,.35); }
+body.round-blessed.mobile-ui #stage .top,
+body.round-blessed .dice-sheet { background:linear-gradient(135deg,#fff,#f0f1f2) !important; }
+body.round-blessed .dice-stage { background:radial-gradient(ellipse,#fff,#e6e9ec); border-color:#bac1c8; }
+body.round-blessed .dice-modal { background:rgba(223,227,231,.75); }
+body.round-blessed.mobile-ui #stage .who .job,
+body.round-blessed.mobile-ui #stage .vital span,
+body.round-blessed.mobile-ui #stage #whoPass .pb,
+body.round-blessed.mobile-ui #stage #whoPass .pb::after { color:#495560; }
+body.round-blessed.mobile-ui #stage #whoPass .pb { background:#eef0f2; border-color:#c5cbd1; }
+body.round-blessed.mobile-ui #stage #whoPass .pb.on { background:#dae6db; }
+body.round-blessed.mobile-ui #stage .sheet-toolbar #locBtn { background:#fff; color:#34404a; }
+body.round-blessed.mobile-ui #stage .cell.formula-cell { background:#e5ede5; }
+body.round-blessed.mobile-ui #stage .cell.extra-cell { background:#ece8ef; }
+body.round-blessed.mobile-ui #stage .cell .tag,
+body.round-blessed.mobile-ui #stage .n.form .tot,
+body.round-blessed.mobile-ui #stage .n.extra2 .big { color:#26343a; }
+body.round-blessed.mobile-ui #stage .cell button { background:#fff; border-color:#aab4bd; color:#34404a; }
+.round-state.blessed { color:#35414b; border-color:#b7bdc4; background:linear-gradient(135deg,#fff,#dce0e4,#fff); }
+.board-dice.blessed { background:rgba(246,247,248,.98); color:#303b45; }
+.bcard.blessed { background:#f4f5f6; border-color:#d4d8dc; box-shadow:0 0 20px #ffffffb3; color:#303b45; }
+.dice-grid { grid-template-columns:repeat(auto-fit,minmax(54px,76px)); justify-content:center; padding:20px 0; }
+.dice-roll-again { display:block; width:100%; margin:0 0 9px; min-height:44px; }
+
+/* Large, high-contrast scoreboard results for viewing across a table. */
+.board-dice {
+  box-sizing:border-box; gap:8px; padding:clamp(12px,2vw,28px);
+  background:#0b1017; overflow:auto;
+  --bd-size:min(180px,calc((94vw - (var(--bd-cols) - 1)*12px)/var(--bd-cols)),calc((55dvh - (var(--bd-rows) - 1)*12px)/var(--bd-rows)));
+}
+.bd-kicker { font-size:clamp(16px,2.5vw,32px); line-height:1.2; }
+.bd-name { margin:0 0 8px; font-size:clamp(22px,3.5vw,48px); line-height:1.2; }
+.bd-faces { display:grid; grid-template-columns:repeat(var(--bd-cols),var(--bd-size)); gap:12px; max-width:none; flex-shrink:0; }
+.bd-face { position:relative; box-sizing:border-box; width:var(--bd-size); height:var(--bd-size); font-size:calc(var(--bd-size)*.56); line-height:1; border:3px solid #9ca6b2; border-radius:16%; background:#e3e7ec; color:#37414c; }
+.bd-face.success { background:#d6ffc0; color:#125326; border:4px solid #52c56c; box-shadow:0 0 16px #64eb7455; }
+.bd-check { position:absolute; right:7%; bottom:5%; font-size:calc(var(--bd-size)*.17); font-weight:900; }
+.bd-result { margin-top:8px; font-size:clamp(30px,5vw,72px); line-height:1.1; font-weight:900; }
+.bd-result strong { font-size:1.4em; font-variant-numeric:tabular-nums; }
+.bd-result small { display:block; margin-top:4px; font-size:clamp(18px,2.5vw,32px); }
+
+/* Blessed condition card: parchment, rose light and weathered silver. */
+body.round-blessed { --bg:#d7b4a8; --card:#f2e5cc; --gold:#927357; --gold2:#65483e; --cream:#3d342f; --muted:#796258; --line:#a79b8d; --btn:#e4d2b9; background:radial-gradient(ellipse at 50% 0%,#fff0d8 0%,#e5b3a4 40%,#a87778 100%) !important; }
+body.round-blessed #stage,body.round-blessed .dice-sheet { box-shadow:0 0 24px #ffe5ca70,0 4px 18px #58463f35; }
+body.round-blessed.mobile-ui #stage .top,body.round-blessed .dice-sheet { background:radial-gradient(ellipse at top,#fff0da80,transparent 70%),linear-gradient(140deg,#edc1af,#f5e7cb 55%,#cfaaaa) !important; border-color:#9b9690; }
+body.round-blessed .dice-stage { background:radial-gradient(ellipse,#faecd4,#e6c9b8 65%,#ccaaa1); border-color:#aaa096; }
+body.round-blessed .dice-modal { background:rgba(91,62,58,.64); }
+body.round-blessed.mobile-ui #stage .who .job,body.round-blessed.mobile-ui #stage .vital span,body.round-blessed.mobile-ui #stage #whoPass .pb,body.round-blessed.mobile-ui #stage #whoPass .pb::after { color:#71594b; }
+body.round-blessed.mobile-ui #stage #whoPass .pb { background:#f4e8d0b3; border-color:#b5a390; }
+body.round-blessed.mobile-ui #stage #whoPass .pb.on { background:#ddd8b8; }
+body.round-blessed.mobile-ui #stage .sheet-toolbar #locBtn { background:#efe0c5; color:#56443a; }
+body.round-blessed.mobile-ui #stage .cell.formula-cell { background:#e1e0c8; }
+body.round-blessed.mobile-ui #stage .cell.extra-cell { background:#e6cfc7; }
+body.round-blessed.mobile-ui #stage .cell .tag,body.round-blessed.mobile-ui #stage .n.form .tot,body.round-blessed.mobile-ui #stage .n.extra2 .big { color:#423a30; }
+body.round-blessed.mobile-ui #stage .cell button { background:#f7ecd8; border-color:#ac9d8e; color:#604c3d; }
+.round-state.blessed { color:#674a41; border-color:#a59b8e; background:linear-gradient(135deg,#eed0bc,#f9ecd2,#d9b5a7); }
+.board-dice.blessed { background:radial-gradient(ellipse at top,#f9ebd1,#e2b9a9 65%,#b98380); color:#4d3c33; }
+.bcard.blessed { background:#efe1c8; border-color:#b7aa96; color:#4d3c33; box-shadow:0 0 18px #f6d5b870; }
+#rqPop .round-condition { display:flex; gap:6px; margin:12px 0; }
+#rqPop .round-condition label { flex:1; position:relative; cursor:pointer; }
+#rqPop .round-condition input { position:absolute; opacity:0; width:1px; height:1px; }
+#rqPop .round-condition span { display:flex; align-items:center; justify-content:center; min-height:44px; border:1px solid var(--line); border-radius:8px; background:var(--btn); color:var(--cream); font-weight:800; }
+#rqPop .round-condition input:checked + span { border:2px solid var(--gold2); box-shadow:inset 0 -3px 0 var(--gold); }
+#rqPop .round-condition input:checked + span::before { content:'✓ '; margin-right:4px; }
+#rqPop .round-condition input:focus-visible + span { outline:2px solid var(--gold2); outline-offset:3px; }
