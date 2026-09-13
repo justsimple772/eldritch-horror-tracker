@@ -3054,6 +3054,7 @@
     <button class="ghost" id="scaleBtn" type="button">Aa</button>
     <button class="ghost" id="roomBtn" type="button">방</button>
     <button class="ghost" id="updBtn" type="button">업데이트</button>
+    <div id="appVerLab" style="margin-top:8px;font-size:11px;color:var(--muted);letter-spacing:.02em">버전</div>
   </div>
   </div>
   </div>
@@ -5618,7 +5619,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js").catch(function(){});
   });
 }
-const APP_VER="20260913-h";
+const APP_VER="20260913-i";
 function applyAppUpdate(){
   const btn=document.getElementById("updBtn");
   function latest(){
@@ -5653,6 +5654,8 @@ function applyAppUpdate(){
   });
 }
 (function(){
+  var lab=document.getElementById("appVerLab");
+  if(lab) lab.textContent="버전 "+APP_VER;
   try{
     if(sessionStorage.getItem("eh-just-updated")==="1"){
       sessionStorage.removeItem("eh-just-updated");
