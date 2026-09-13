@@ -3040,7 +3040,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260914-a">
+<link rel="stylesheet" href="mobile-ui.css?v=20260914-b">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -3156,9 +3156,9 @@
   <section class="dice-sheet" role="dialog" aria-modal="true" aria-labelledby="diceTitle">
     <header class="dice-head">
       <div><div class="dice-kicker">주사위 판정</div><h2 id="diceTitle">기술</h2></div>
-      <button type="button" class="dice-close" id="diceClose" aria-label="주사위 창 닫기">닫기</button>
+      <div class="dice-head-buttons"><button type="button" class="dice-close" id="diceHistoryOpen">기록</button><button type="button" class="dice-close" id="diceClose" aria-label="주사위 창 닫기">닫기</button></div>
     </header>
-    <div class="dice-summary" id="diceSummary"></div>
+    <section id="diceHistory" class="dice-history" role="dialog" aria-modal="true" aria-label="주사위 기록" hidden><header><h2>주사위 기록</h2><button type="button" class="dice-close" id="diceHistoryClose">돌아가기</button></header><p id="diceHistoryNotice">이 기기에 저장된 기록 · 최신순</p><div id="diceHistoryList"></div></section><div class="dice-summary" id="diceSummary"></div>
     <div class="dice-count-adjust" aria-label="이번 판정 주사위 개수 조절">
       <span>이번 판정</span>
       <button type="button" data-dice-count="-1" aria-label="주사위 1개 줄이기">−</button>
@@ -5740,6 +5740,40 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   let dice={sid:"",part:"",label:"",count:0,values:[],selected:new Set(),rolling:false,pendingAction:""};
   let rollTimer=null, lastShake=0, lastMotion=0;
 
+  const historyPanel=document.getElementById("diceHistory");
+  const historyKey="eh-dice-history-v1";
+  let history=[];
+  try { const saved=JSON.parse(localStorage.getItem(historyKey)||"[]"); if(Array.isArray(saved)) history=saved; } catch(e){}
+  let historySaveFailed=false;
+  function recordDice(reason,targets){
+    const q=rqOf(), inv=currentInv();
+    history.push({time:new Date().toISOString(),name:inv?inv.kr:"조사자",skill:dice.label,base:dice.baseCount,modifier:dice.count-dice.baseCount,count:dice.count,values:dice.values.slice(),successes:successTotal(),mode:q.mode,sixBonus:!!q.sixBonus,reason:reason,targets:targets||[]});
+    try { localStorage.setItem(historyKey,JSON.stringify(history)); historySaveFailed=false; } catch(e){ historySaveFailed=true; }
+  }
+  function showHistory(){
+    const list=document.getElementById("diceHistoryList");
+    list.replaceChildren();
+    document.getElementById("diceHistoryNotice").textContent=historySaveFailed?"저장 공간이 부족해 최신 기록은 현재 창에서만 유지됩니다.":"이 기기에 저장된 기록 · 최신순";
+    if(!history.length) list.textContent="아직 주사위 기록이 없습니다.";
+    history.slice().reverse().forEach(function(entry){
+      const item=document.createElement("article");
+      const title=document.createElement("strong");
+      title.textContent=entry.name+" · "+entry.skill+" · "+entry.reason;
+      const detail=document.createElement("p");
+      detail.textContent=new Date(entry.time).toLocaleString("ko-KR")+"\n기술치 "+entry.base+" · 수동 보정 "+(entry.modifier>0?"+":"")+entry.modifier+" · 주사위 "+entry.count+"개";
+      const values=document.createElement("p");
+      values.className="history-values";
+      values.textContent=entry.values.join(" · ")+" → "+entry.successes+" 성공";
+      const condition=document.createElement("small");
+      condition.textContent=(entry.mode==="blessed"?"축복":entry.mode==="cursed"?"저주":"일반")+(entry.sixBonus?" · 6보정 적용":"")+(entry.targets.length?" · 대상: "+entry.targets.map(function(i){return (i+1)+"번";}).join(", "):"");
+      item.append(title,detail,values,condition); list.appendChild(item);
+    });
+    historyPanel.hidden=false;
+    document.getElementById("diceHistoryClose").focus();
+  }
+  function closeHistory(){ historyPanel.hidden=true; document.getElementById("diceHistoryOpen").focus(); }
+  document.getElementById("diceHistoryOpen").onclick=showHistory;
+  document.getElementById("diceHistoryClose").onclick=closeHistory;
   function randomDie(){
     if(window.crypto&&crypto.getRandomValues){ const a=new Uint32Array(1); crypto.getRandomValues(a); return (a[0]%6)+1; }
     return Math.floor(Math.random()*6)+1;
@@ -5840,7 +5874,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     dice.count=next; dice.values=[]; dice.selected.clear(); dice.rolling=false; dice.pendingAction="";
     paintCountAdjust(); paintDice(); paintActions();
   }
-  function roll(indices){
+  function roll(indices,reason){
     if(dice.rolling||!dice.count) return;
     if(!dice.values.length) dice.values=Array.from({length:dice.count},randomDie);
     const targets=indices&&indices.length?indices:Array.from({length:dice.count},function(_,i){return i;});
@@ -5851,7 +5885,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     rollTimer=setInterval(function(){
       targets.forEach(function(i){ dice.values[i]=randomDie(); });
       paintDice();
-      if(++ticks>=12){ clearInterval(rollTimer); rollTimer=null; dice.rolling=false; if(navigator.vibrate) navigator.vibrate(18); paintDice(); paintActions(); publishDiceOverlay(); }
+      if(++ticks>=12){ clearInterval(rollTimer); rollTimer=null; dice.rolling=false; if(navigator.vibrate) navigator.vibrate(18); paintDice(); paintActions(); publishDiceOverlay(); recordDice(reason||"첫 굴림",indices); }
     },75);
   }
   function useAction(type){
@@ -5859,7 +5893,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     const slot=state(), sk=slot.skills[dice.sid];
     if(type==="round-arr"){
       dice.pendingAction="";
-      if(consume(slot,"arr")) roll(Array.from({length:dice.values.length},function(_,i){return i;}));
+      if(consume(slot,"arr")) roll(Array.from({length:dice.values.length},function(_,i){return i;}),"전체 리롤");
       return;
     }
     if(!actionInfo(type)) return;
@@ -5880,7 +5914,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   }
   function closeDice(){
     clearInterval(rollTimer); rollTimer=null; dice.rolling=false;
-    modal.hidden=true; diceOverlay=null; publishSnap(); renderBoard(); document.body.classList.remove("dice-open"); render();
+    historyPanel.hidden=true; modal.hidden=true; diceOverlay=null; publishSnap(); renderBoard(); document.body.classList.remove("dice-open"); render();
   }
   stage.addEventListener("click",function(e){ if(!dice.values.length&&!e.target.closest("[data-die]")) roll(); });
 
@@ -5896,8 +5930,8 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
       const action=actionInfo(dice.pendingAction);
       dice.pendingAction=""; dice.selected.clear();
       if(action&&consume(action.owner,action.key)){
-        if(action.mode==="plus1") dice.values[i]=Math.min(6,dice.values[i]+1);
-        else roll([i]);
+        if(action.mode==="plus1"){ dice.values[i]=Math.min(6,dice.values[i]+1); recordDice(action.label,[i]); }
+        else roll([i],action.label);
       }
       if(navigator.vibrate) navigator.vibrate(12);
       paintDice(); paintActions();
@@ -5912,6 +5946,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   modal.addEventListener("click",function(e){ if(e.target===modal) closeDice(); });
   document.addEventListener("keydown",function(e){
     if(e.key!=="Escape"||modal.hidden) return;
+    if(!historyPanel.hidden){ closeHistory(); return; }
     if(dice.pendingAction){ dice.pendingAction=""; paintDice(); paintActions(); }
     else closeDice();
   });
@@ -5920,10 +5955,10 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     catch(e){ result.textContent="이 기기에서는 흔들기 권한을 켤 수 없습니다"; }
   };
   window.addEventListener("devicemotion",function(e){
-    if(modal.hidden||dice.rolling) return;
+    if(modal.hidden||!historyPanel.hidden||dice.rolling) return;
     const a=e.acceleration||e.accelerationIncludingGravity; if(!a) return;
     const power=Math.sqrt((a.x||0)**2+(a.y||0)**2+(a.z||0)**2), now=Date.now();
-    if(power>16&&now-lastMotion>280&&now-lastShake>1200){ lastMotion=now; lastShake=now; roll(); }
+    if(power>16&&now-lastMotion>280&&now-lastShake>1200){ lastMotion=now; lastShake=now; dice.pendingAction=""; roll(null,dice.values.length?"흔들어 리롤":"흔들어 첫 굴림"); }
   });
 
   let hold=null,held=null,startX=0,startY=0;
@@ -5952,7 +5987,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260914-a";
+const APP_VER="20260914-b";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;

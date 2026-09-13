@@ -380,3 +380,13 @@ body.round-blessed.mobile-ui #stage .cell button { background:#f7ecd8; border-co
 #boardDiceOverlay:not(.blessed) .bd-result { text-shadow:0 2px 4px #000; }
 #stage { touch-action:pan-y pinch-zoom; }
 .bd-breakdown { color:inherit; font-size:clamp(18px,2.8vw,36px); line-height:1.35; font-weight:800; margin-top:6px; }
+
+.dice-head-buttons { display:flex; gap:8px; }
+.dice-history { position:fixed; inset:5%; z-index:150; padding:18px; border:2px solid #aa9780; border-radius:16px; background:#201b28; color:#fff4e6; overflow:auto; box-shadow:0 0 0 100vmax #000b; }
+.dice-history[hidden] { display:none; }
+.dice-history header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.dice-history h2 { color:#fff4e6; }
+.dice-history article { padding:14px 0; border-bottom:1px solid #766777; }
+.dice-history p { white-space:pre-line; line-height:1.5; margin:8px 0; }
+.dice-history .history-values { font-size:20px; font-weight:800; color:#e4ffcc; }
+.dice-history small { color:#ded2e4; }
