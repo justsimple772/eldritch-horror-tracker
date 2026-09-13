@@ -1,5 +1,5 @@
-const CACHE="eh-tracker-v9";
-const PRECACHE=["./","./index.html","./manifest.webmanifest","./mobile-ui.css?v=20260913-l","./icon-192.png","./icon-512.png","./apple-touch-icon.png"];
+const CACHE="eh-tracker-v10";
+const PRECACHE=["./","./index.html","./manifest.webmanifest","./mobile-ui.css?v=20260913-m","./icon-192.png","./icon-512.png","./apple-touch-icon.png"];
 self.addEventListener("install",event=>event.waitUntil(caches.open(CACHE).then(c=>c.addAll(PRECACHE)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>/^eh-tracker-v\d+$/.test(k)&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener("message",event=>{if(event.data&&event.data.type==="SKIP_WAITING") self.skipWaiting();});

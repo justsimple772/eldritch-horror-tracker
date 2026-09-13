@@ -3040,7 +3040,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260913-l">
+<link rel="stylesheet" href="mobile-ui.css?v=20260913-m">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -3150,7 +3150,7 @@
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <div class="locpop" id="locPop" hidden></div>
-<div class="rqpop" id="rqPop" hidden></div><div id="scalePop" hidden><h4 style="margin:0 0 8px">화면 맞춤</h4><p style="margin:0 0 8px;font-size:12px;color:var(--muted);line-height:1.35">0이 화면 기준입니다. 버튼은 글씨와 함께 커집니다.</p><label>높이 보정 <b id="skHval">0</b></label><input id="skH" type="range" min="-24" max="40" value="0"><label>글씨 보정 <b id="skFval">0</b></label><input id="skF" type="range" min="-8" max="22" value="0"><label>버튼 보정 <b id="skBval">0</b></label><input id="skB" type="range" min="-6" max="24" value="0"><label>간격 보정 <b id="skGval">0</b></label><input id="skG" type="range" min="-12" max="12" value="0"><p style="margin:0 0 8px;font-size:11px;color:var(--muted)">왼쪽(-) 기본칸 축소 · 오른쪽(+) 기본칸 확대</p><button type="button" id="scaleOk" style="width:100%;margin-top:10px">확인</button></div>
+<div class="rqpop" id="rqPop" hidden></div><div id="scalePop" hidden><h4 style="margin:0 0 8px">화면 맞춤</h4><p style="margin:0 0 8px;font-size:12px;color:var(--muted);line-height:1.35">기본값은 남은 화면을 기술 5개에 자동으로 나눕니다.</p><label>기술칸 높이 <b id="skHval">자동</b></label><input id="skH" type="range" min="-30" max="50" value="0"><label>숫자 크기 <b id="skFval">자동</b></label><input id="skF" type="range" min="-10" max="18" value="0"><label>버튼 크기 <b id="skBval">자동</b></label><input id="skB" type="range" min="-8" max="14" value="0"><label>좌우 칸 비율 <b id="skGval">균형</b></label><input id="skG" type="range" min="-10" max="10" value="0"><div class="scale-actions"><button type="button" id="scaleReset">자동 맞춤</button><button type="button" id="scaleOk">확인</button></div></div>
 <script>
 
 const PASSIVE={
@@ -5501,10 +5501,12 @@ function applyScale(){
   }
   const adjB=parseInt(localStorage.getItem("eh-skb-adj")||"0",10);
   const adjG=parseInt(localStorage.getItem("eh-skg-adj")||"0",10);
-  const h=Math.max(124,Math.min(180,Math.round(avail/5))+adjH*2);
-  const narrow=window.innerWidth<360;
-  const f=Math.max(26,Math.min(narrow?36:window.innerWidth<430?42:52,36+adjF));
-  const b=Math.max(30,Math.min(narrow?34:window.innerWidth<430?38:46,34+adjB));
+  const count=Math.max(1,SKILLS.length||5);
+  const gap=4;
+  const autoH=Math.floor((avail-gap*(count-1))/count);
+  const h=Math.max(70,Math.min(168,autoH+adjH));
+  const f=Math.max(22,Math.min(42,Math.round(h*.31)+adjF));
+  const b=Math.max(22,Math.min(40,Math.round(h*.28)+adjB));
   document.documentElement.style.setProperty("--sk-h",h+"px");
   document.documentElement.style.setProperty("--sk-fs",f+"px");
   document.documentElement.style.setProperty("--sk-btn",b+"px");
@@ -5514,10 +5516,11 @@ function applyScale(){
   document.documentElement.style.setProperty("--sk-tag","11px");
   const hv=document.getElementById("skHval"), fv=document.getElementById("skFval"), bv=document.getElementById("skBval"), gv=document.getElementById("skGval");
   const hi=document.getElementById("skH"), fi=document.getElementById("skF"), bi=document.getElementById("skB"), gi=document.getElementById("skG");
-  if(hv) hv.textContent=(adjH>=0?("+ "+adjH):String(adjH));
-  if(fv) fv.textContent=(adjF>=0?("+ "+adjF):String(adjF));
-  if(bv) bv.textContent=(adjB>=0?("+ "+adjB):String(adjB));
-  if(gv) gv.textContent=(adjG>=0?("+ "+adjG):String(adjG));
+  function lab(n,zero){ return n===0?zero:(n>0?"+"+n:String(n)); }
+  if(hv) hv.textContent=lab(adjH,"자동");
+  if(fv) fv.textContent=lab(adjF,"자동");
+  if(bv) bv.textContent=lab(adjB,"자동");
+  if(gv) gv.textContent=lab(adjG,"균형");
   if(hi) hi.value=adjH;
   if(fi) fi.value=adjF;
   if(bi) bi.value=adjB;
@@ -5569,6 +5572,10 @@ document.getElementById("scaleBtn").onclick=function(e){
     applyScale();
   });
 });
+document.getElementById("scaleReset").onclick=function(){
+  ["eh-skh-adj","eh-skf-adj","eh-skb-adj","eh-skg-adj"].forEach(function(k){ localStorage.removeItem(k); });
+  applyScale();
+};
 window.addEventListener("resize", function(){ applyScale(); });
 window.addEventListener("orientationchange", function(){ setTimeout(applyScale, 250); });
 document.getElementById("scaleOk").onclick=function(){ document.getElementById("scalePop").hidden=true; };
@@ -5621,7 +5628,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260913-l";
+const APP_VER="20260913-m";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;

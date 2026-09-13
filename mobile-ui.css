@@ -90,3 +90,137 @@ body.mobile-ui #appVerLab { padding:10px 4px 4px !important; border-top:1px soli
   body.mobile-ui #stage { overflow:visible; min-height:100dvh; }
   body.mobile-ui.tall #stage .skills { flex:none !important; overflow:visible !important; }
 }
+
+/* Dense mobile sheet: fit all five skills into the available viewport. */
+body.mobile-ui { padding-bottom:0 !important; }
+body.mobile-ui #stage { height:100%; min-height:0; }
+body.mobile-ui.tall #stage .top {
+  grid-template-columns:46px minmax(0,1fr) 38px;
+  grid-template-rows:52px auto 36px;
+  gap:4px 7px; padding:6px 7px; margin:0 0 3px;
+  border-radius:10px;
+}
+body.mobile-ui.tall #stage .profile,
+body.mobile-ui.tall #stage .profile img,
+body.mobile-ui.tall #stage .profile .ph {
+  width:46px !important; height:52px !important; border-radius:7px;
+}
+body.mobile-ui #stage .edit {
+  width:25px; height:25px; right:-3px; bottom:-3px;
+  font-size:13px; line-height:23px; border-radius:7px;
+}
+body.mobile-ui.tall #stage .who .name {
+  font-size:15px; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+body.mobile-ui.tall #stage .who .job {
+  margin-top:2px; font-size:9px; line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+body.mobile-ui.tall #stage .vitals { gap:9px; margin:3px 0 0; }
+body.mobile-ui.tall #stage .vital { gap:3px; }
+body.mobile-ui.tall #stage .vital span { font-size:9px; }
+body.mobile-ui.tall #stage .vital b { font-size:14px; }
+body.mobile-ui.tall #stage #setBtn {
+  width:38px; height:36px; align-self:start; font-size:11px; border-radius:8px;
+}
+body.mobile-ui.tall #stage #whoPass {
+  min-height:25px; max-height:31px; gap:0; overflow:hidden; align-items:stretch;
+}
+body.mobile-ui #stage #whoPass .pb {
+  min-height:25px; height:auto; max-height:31px; padding:4px 7px;
+  border-radius:6px; font-size:10px; line-height:1.15;
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;
+}
+body.mobile-ui #stage #whoPass .pb::before { margin-right:5px; font-size:9px; }
+body.mobile-ui #stage #whoPass .pb.tog::after { content:" · 적용"; font-size:9px; }
+body.mobile-ui #stage #whoPass .pb.on::after { content:" · 적용 중 ✓"; }
+body.mobile-ui #stage .sheet-toolbar { gap:5px; }
+body.mobile-ui.tall #stage .sheet-toolbar #locBtn {
+  height:34px !important; min-height:34px !important; padding:0 7px !important;
+  border-radius:7px !important; font-size:10px !important; line-height:1.15 !important;
+}
+body.mobile-ui.tall #stage .sheet-toolbar .party { height:34px; border-radius:7px; }
+body.mobile-ui.tall #stage .party .nav,
+body.mobile-ui.tall #stage .party .lead {
+  width:30px; height:32px; font-size:16px; line-height:32px;
+}
+body.mobile-ui.tall #stage .party .lead { width:38px; font-size:10px; }
+body.mobile-ui.tall #stage .party .lead.num { font-size:15px; }
+body.mobile-ui.tall #stage #countBtn {
+  width:38px; height:34px; border-radius:7px; font-size:11px;
+}
+body.mobile-ui #stage .rerow {
+  min-height:31px; height:31px; margin:0 0 3px; padding:1px 4px; gap:4px;
+}
+body.mobile-ui #stage .rerow .lab { font-size:11px; }
+body.mobile-ui #stage #roundBtn { height:27px; padding:0 7px; font-size:9px; border-radius:6px; }
+body.mobile-ui #stage #roundGear { width:27px; min-width:27px; height:27px; font-size:12px; border-radius:6px; }
+body.mobile-ui.tall #stage .skills {
+  gap:4px !important; padding:0 !important; overflow:hidden !important;
+}
+body.mobile-ui.tall #stage .skill,
+body.mobile-ui.tall #stage .skill.cols2,
+body.mobile-ui.tall #stage .skill:not(.cols2) {
+  grid-template-rows:18px minmax(0,1fr) auto !important;
+  gap:2px 4px !important; padding:4px !important;
+  height:var(--sk-h) !important; min-height:var(--sk-h) !important; max-height:var(--sk-h) !important;
+  margin:0 !important; border-radius:8px;
+}
+body.mobile-ui.tall #stage .skname {
+  height:18px; padding:0 6px; font-size:11px !important; line-height:18px !important; border-radius:4px;
+}
+body.mobile-ui.tall #stage .cell.formula-cell,
+body.mobile-ui.tall #stage .cell.extra-cell {
+  min-height:0 !important; height:auto !important; padding:13px 3px 2px !important; border-radius:5px;
+}
+body.mobile-ui.tall #stage .cell.formula-cell .tag {
+  top:2px; left:4px; right:4px; height:10px; font-size:8px !important; line-height:10px !important;
+}
+body.mobile-ui.tall #stage .cell.formula-cell .stepper.formula {
+  min-height:0 !important; gap:2px !important;
+}
+body.mobile-ui.tall #stage .cell.formula-cell .stepper.formula button,
+body.mobile-ui.tall #stage .cell.extra-cell button {
+  border-radius:5px; font-size:16px !important;
+}
+body.mobile-ui.tall #stage .n.form { gap:1px; }
+body.mobile-ui.tall #stage .n.form .a,
+body.mobile-ui.tall #stage .n.form .b,
+body.mobile-ui.tall #stage .n.form .c,
+body.mobile-ui.tall #stage .n.form .d { font-size:9px !important; line-height:1 !important; }
+body.mobile-ui.tall #stage .cell.extra-cell .tag {
+  top:2px; font-size:9px !important; line-height:10px !important;
+}
+body.mobile-ui.tall #stage .n.extra2 { gap:1px; }
+body.mobile-ui.tall #stage .n.extra2 .small,
+body.mobile-ui.tall #stage .n.extra2 .small span { font-size:8px !important; line-height:1 !important; }
+body.mobile-ui.tall #stage .flags {
+  gap:3px !important; min-height:0 !important; height:auto !important; max-height:24px !important;
+}
+body.mobile-ui.tall #stage .flags .skgear {
+  top:0; right:3px; width:26px; height:22px; min-width:26px; font-size:12px;
+}
+body.mobile-ui.tall #stage .flag .ft {
+  height:22px !important; min-height:22px !important; padding:0 6px !important;
+  font-size:9px !important; line-height:22px !important; border-radius:4px;
+}
+body.mobile-ui #scalePop { max-height:min(90dvh,620px); overflow-y:auto; }
+body.mobile-ui #scalePop .scale-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+body.mobile-ui #scalePop .scale-actions button { width:100%; height:40px; margin:0 !important; }
+@media(max-width:359px){
+  body.mobile-ui.tall #stage .top {
+    grid-template-columns:42px minmax(0,1fr) 35px; grid-template-rows:48px auto 34px;
+    gap:3px 5px; padding:5px;
+  }
+  body.mobile-ui.tall #stage .profile,
+  body.mobile-ui.tall #stage .profile img,
+  body.mobile-ui.tall #stage .profile .ph { width:42px !important; height:48px !important; }
+  body.mobile-ui.tall #stage #setBtn { width:35px; height:33px; }
+  body.mobile-ui.tall #stage .party .nav { width:27px; }
+  body.mobile-ui.tall #stage .party .lead { width:34px; }
+  body.mobile-ui.tall #stage #countBtn { width:35px; }
+}
+@media(max-height:700px){
+  html:has(body.mobile-ui),body.mobile-ui { height:100dvh; min-height:0; overflow:hidden; }
+  body.mobile-ui #stage { height:100%; min-height:0; overflow:hidden; }
+  body.mobile-ui.tall #stage .skills { flex:1 1 auto !important; overflow:hidden !important; }
+}
