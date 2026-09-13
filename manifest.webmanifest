@@ -1,0 +1,16 @@
+{
+  "name": "엘드리치 호러 트래커",
+  "short_name": "엘드리치",
+  "description": "엘드리치 호러 조사자 수치·전광판 트래커",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#140E0C",
+  "theme_color": "#140E0C",
+  "lang": "ko",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
