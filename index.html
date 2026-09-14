@@ -3040,7 +3040,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260914-h">
+<link rel="stylesheet" href="mobile-ui.css?v=20260914-i">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -5313,7 +5313,8 @@ function renderBoard(){
       die.style.setProperty("--bd-rows",Math.ceil(count/cols));
       setVictoryVars(die,count);
       const perfectTitle=x.perfectLevel===1?"완벽한 성공":x.perfectLevel===2?"대성공":"압도적 대성공";
-      die.innerHTML='<div class="bd-kicker">'+label+' · '+threshold+' 이상 성공</div><div class="bd-name">'+active.name+' · '+x.label+'</div><div class="bd-faces'+(x.rolling?' rolling':'')+'">'+x.values.map(function(v){ const success=!x.rolling&&v>=threshold; return '<span class="bd-face'+(success?' success':'')+'" aria-label="'+v+(success?' 성공':' 실패')+'">'+v+(success?'<span class="bd-check" aria-hidden="true">✓</span>':'')+'</span>'; }).join("")+'</div><div class="bd-result'+(x.shattered?' failure':'')+(x.celebrating?' victory':'')+'" aria-live="polite">'+(x.rolling?'<strong>굴리는 중…</strong>':x.shattered?'<strong>완전 실패</strong><small>0 성공</small>':x.celebrating?'<strong>'+perfectTitle+'</strong>':'<strong>'+x.successes+'</strong> 성공'+(x.sixExtra?' <small>(6보정 +'+x.sixExtra+')</small>':''))+'</div>';
+      const boardNarrative=x.narrative&&x.narrative.text?'<div class="bd-narrative '+(x.narrative.tone||"")+'">'+String(x.narrative.text).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];})+'</div>':'';
+      die.innerHTML='<div class="bd-kicker">'+label+' · '+threshold+' 이상 성공</div><div class="bd-name">'+active.name+' · '+x.label+'</div>'+boardNarrative+'<div class="bd-faces'+(x.rolling?' rolling':'')+'">'+x.values.map(function(v){ const success=!x.rolling&&v>=threshold; return '<span class="bd-face'+(success?' success':'')+'" aria-label="'+v+(success?' 성공':' 실패')+'">'+v+(success?'<span class="bd-check" aria-hidden="true">✓</span>':'')+'</span>'; }).join("")+'</div><div class="bd-result'+(x.shattered?' failure':'')+(x.celebrating?' victory':'')+'" aria-live="polite">'+(x.rolling?'<strong>굴리는 중…</strong>':x.shattered?'<strong>완전 실패</strong><small>0 성공</small>':x.celebrating?'<strong>'+perfectTitle+'</strong>':'<strong>'+x.successes+'</strong> 성공'+(x.sixExtra?' <small>(6보정 +'+x.sixExtra+')</small>':''))+'</div>';
       const base=Number.isFinite(x.baseCount)?x.baseCount:x.values.length;
       const modifier=Number.isFinite(x.modifier)?x.modifier:0;
       const total=Number.isFinite(x.count)?x.count:x.values.length;
@@ -5955,13 +5956,17 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     return dice.part==="cbt"?"willCombat":"will";
   }
   function paintNarrative(){
+    const data=narrativeData();
+    narrative.hidden=!data;
+    narrative.className="dice-narrative"+(data?" "+data.tone:"");
+    narrative.textContent=data?data.text:"";
+  }
+  function narrativeData(){
     const kind=NARRATIVE[narrativeKind()];
     const successes=successTotal();
     const key=dice.rolling?null:dice.shattered?"fail":dice.celebrating?"win":successes>=3?"good":null;
     const tier=successes>=8?2:successes>=5?1:0;
-    narrative.hidden=!key;
-    narrative.className="dice-narrative"+(key?" "+key:"");
-    narrative.textContent=!key?"":key==="fail"?kind.fail:key==="win"?kind.perfect[(dice.perfectLevel||1)-1]:kind.streak[tier];
+    return !key?null:{tone:key,text:key==="fail"?kind.fail:key==="win"?kind.perfect[(dice.perfectLevel||1)-1]:kind.streak[tier]};
   }
   function successTotal(){
     const q=rqOf();
@@ -5969,7 +5974,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   }
   function publishDiceOverlay(){
     if(modal.hidden||!dice.values.length) diceOverlay=null;
-    else { const q=rqOf(), sixExtra=q.sixBonus?dice.values.filter(function(v){return v===6;}).length:0; diceOverlay={label:dice.label,baseCount:dice.baseCount,modifier:dice.count-dice.baseCount,count:dice.count,values:dice.values.slice(),successes:successTotal(),sixExtra:sixExtra,mode:q.mode,rolling:dice.rolling,shattered:!!dice.shattered,celebrating:!!dice.celebrating,perfectLevel:dice.perfectLevel||0}; }
+    else { const q=rqOf(), sixExtra=q.sixBonus?dice.values.filter(function(v){return v===6;}).length:0; diceOverlay={label:dice.label,baseCount:dice.baseCount,modifier:dice.count-dice.baseCount,count:dice.count,values:dice.values.slice(),successes:successTotal(),sixExtra:sixExtra,mode:q.mode,rolling:dice.rolling,shattered:!!dice.shattered,celebrating:!!dice.celebrating,perfectLevel:dice.perfectLevel||0,narrative:narrativeData()}; }
     publishSnap();
   }
   function actionInfo(type){
@@ -6165,7 +6170,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260914-h";
+const APP_VER="20260914-i";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;

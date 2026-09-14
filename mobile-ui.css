@@ -448,6 +448,28 @@ body.round-blessed.mobile-ui #stage .cell button { background:#f7ecd8; border-co
 #boardDiceOverlay .bd-result small { color:inherit; opacity:1; }
 #boardDiceOverlay:not(.blessed) .bd-name,
 #boardDiceOverlay:not(.blessed) .bd-result { text-shadow:0 2px 4px #000; }
+.bd-narrative { max-width:min(92vw,960px); margin:3px 0 10px; padding:8px 14px; border-radius:10px; border:2px solid currentColor; background:rgba(0,0,0,.32); color:#f5fbff; font-size:clamp(17px,2.8vw,34px); font-weight:900; line-height:1.35; text-shadow:0 2px 5px #000; }
+.bd-narrative.fail { color:#ffd6d0; border-color:#ff8678; background:rgba(83,8,19,.7); }
+.bd-narrative.win { color:#ecfbff; border-color:#b8eaff; background:rgba(13,48,63,.74); }
+.bd-narrative.good { color:#edffd5; border-color:#bcf28c; background:rgba(29,68,28,.72); }
+#boardDiceOverlay:not(.blessed) .bd-kicker,
+#boardDiceOverlay:not(.blessed) .bd-name,
+#boardDiceOverlay:not(.blessed) .bd-result,
+#boardDiceOverlay:not(.blessed) .bd-result strong,
+#boardDiceOverlay:not(.blessed) .bd-result small,
+#boardDiceOverlay:not(.blessed) .bd-breakdown { color:#f8fbff !important; }
+#boardDiceOverlay.blessed .bd-kicker,
+#boardDiceOverlay.blessed .bd-name,
+#boardDiceOverlay.blessed .bd-result,
+#boardDiceOverlay.blessed .bd-result strong,
+#boardDiceOverlay.blessed .bd-result small,
+#boardDiceOverlay.blessed .bd-breakdown { color:#142832 !important; text-shadow:none !important; }
+#boardDiceOverlay.cursed .bd-kicker,
+#boardDiceOverlay.cursed .bd-name,
+#boardDiceOverlay.cursed .bd-result,
+#boardDiceOverlay.cursed .bd-result strong,
+#boardDiceOverlay.cursed .bd-result small,
+#boardDiceOverlay.cursed .bd-breakdown { color:#fff3f7 !important; }
 #stage { touch-action:pan-y pinch-zoom; }
 .bd-breakdown { color:inherit; font-size:clamp(18px,2.8vw,36px); line-height:1.35; font-weight:800; margin-top:6px; }
 
