@@ -337,6 +337,22 @@ body.round-blessed.mobile-ui #stage .cell button { background:#fff; border-color
 .bd-faces { display:grid; grid-template-columns:repeat(var(--bd-cols),var(--bd-size)); gap:12px; max-width:none; flex-shrink:0; }
 .bd-face { position:relative; box-sizing:border-box; width:var(--bd-size); height:var(--bd-size); font-size:calc(var(--bd-size)*.56); line-height:1; border:3px solid #9ca6b2; border-radius:16%; background:#e3e7ec; color:#37414c; }
 .bd-face.success { background:#d6ffc0; color:#125326; border:4px solid #52c56c; box-shadow:0 0 16px #64eb7455; }
+.bd-faces.rolling .bd-face { animation:board-die-roll .17s linear infinite; }
+.bd-faces.rolling .bd-face:nth-child(2n) { animation-delay:-.08s; }
+.bd-faces.rolling .bd-face:nth-child(3n) { animation-delay:-.13s; }
+@keyframes board-die-roll { 0% { transform:rotate(-4deg) scale(.96); } 50% { transform:rotate(5deg) scale(1.04); } 100% { transform:rotate(-4deg) scale(.96); } }
+
+/* A failed roll makes the dice tray and remote display visibly crack. */
+.dice-shattered .dice-sheet { animation:dice-tray-shatter .48s cubic-bezier(.2,.7,.2,1); }
+.dice-grid.shattered .dice-face { animation:dice-face-shatter .52s cubic-bezier(.2,.7,.2,1); border-color:#9f4e43; box-shadow:inset 0 0 0 2px #3b1a20,0 0 14px #c2443e88; }
+.dice-grid.shattered .dice-face:nth-child(2n) { animation-delay:.035s; }
+.dice-grid.shattered .dice-face:nth-child(3n) { animation-delay:.07s; }
+.board-dice.shattered { animation:board-shatter .58s cubic-bezier(.2,.7,.2,1); }
+.board-dice.shattered::after { content:"✦  ✧  ✦"; position:absolute; inset:46% 0 auto; color:#ffb09c; font-size:clamp(30px,6vw,76px); letter-spacing:.6em; text-align:center; pointer-events:none; animation:shatter-sparks .65s ease-out both; }
+@keyframes dice-tray-shatter { 0%,100% { transform:translateX(0); } 18% { transform:translateX(-11px) rotate(-.4deg); } 38% { transform:translateX(10px) rotate(.35deg); } 58% { transform:translateX(-6px); } }
+@keyframes dice-face-shatter { 0% { transform:scale(1); filter:none; } 35% { transform:translate(-4px,3px) rotate(-7deg) scale(.94); filter:brightness(.6); } 65% { transform:translate(5px,-3px) rotate(8deg) scale(.91); } 100% { transform:scale(1); filter:none; } }
+@keyframes board-shatter { 0%,100% { transform:translateX(0); } 20% { transform:translateX(-18px); } 42% { transform:translateX(15px); } 65% { transform:translateX(-8px); } }
+@keyframes shatter-sparks { 0% { opacity:0; transform:scale(.3); } 35% { opacity:1; transform:scale(1.15); } 100% { opacity:0; transform:translateY(32px) scale(1.35); } }
 .bd-check { position:absolute; right:7%; bottom:5%; font-size:calc(var(--bd-size)*.17); font-weight:900; }
 .bd-result { margin-top:8px; font-size:clamp(30px,5vw,72px); line-height:1.1; font-weight:900; }
 .bd-result strong { font-size:1.4em; font-variant-numeric:tabular-nums; }
