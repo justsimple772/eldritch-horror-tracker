@@ -448,7 +448,7 @@ body.round-blessed.mobile-ui #stage .cell button { background:#f7ecd8; border-co
 #boardDiceOverlay .bd-result small { color:inherit; opacity:1; }
 #boardDiceOverlay:not(.blessed) .bd-name,
 #boardDiceOverlay:not(.blessed) .bd-result { text-shadow:0 2px 4px #000; }
-.bd-narrative { max-width:min(92vw,960px); margin:3px 0 10px; padding:8px 14px; border-radius:10px; border:2px solid currentColor; background:rgba(0,0,0,.32); color:#f5fbff; font-size:clamp(17px,2.8vw,34px); font-weight:900; line-height:1.35; text-shadow:0 2px 5px #000; }
+.bd-narrative { max-width:min(94vw,1120px); margin:4px 0 14px; padding:11px 18px; border-radius:12px; border:2px solid currentColor; background:rgba(0,0,0,.32); color:#f5fbff; font-size:clamp(22px,3.9vw,52px); font-weight:900; line-height:1.35; text-shadow:0 2px 5px #000; }
 .bd-narrative.fail { color:#ffd6d0; border-color:#ff8678; background:rgba(83,8,19,.7); }
 .bd-narrative.win { color:#ecfbff; border-color:#b8eaff; background:rgba(13,48,63,.74); }
 .bd-narrative.good { color:#edffd5; border-color:#bcf28c; background:rgba(29,68,28,.72); }
@@ -470,6 +470,19 @@ body.round-blessed.mobile-ui #stage .cell button { background:#f7ecd8; border-co
 #boardDiceOverlay.cursed .bd-result strong,
 #boardDiceOverlay.cursed .bd-result small,
 #boardDiceOverlay.cursed .bd-breakdown { color:#fff3f7 !important; }
+#boardDiceOverlay.blessed.celebrating .bd-kicker,
+#boardDiceOverlay.blessed.celebrating .bd-name,
+#boardDiceOverlay.blessed.celebrating .bd-result,
+#boardDiceOverlay.blessed.celebrating .bd-result strong,
+#boardDiceOverlay.blessed.celebrating .bd-result small,
+#boardDiceOverlay.blessed.celebrating .bd-breakdown,
+#boardDiceOverlay.blessed.shattered .bd-kicker,
+#boardDiceOverlay.blessed.shattered .bd-name,
+#boardDiceOverlay.blessed.shattered .bd-result,
+#boardDiceOverlay.blessed.shattered .bd-result strong,
+#boardDiceOverlay.blessed.shattered .bd-result small,
+#boardDiceOverlay.blessed.shattered .bd-breakdown { color:#f8fbff !important; text-shadow:0 3px 8px #06131c !important; }
+#boardDiceOverlay.blessed.celebrating .bd-result.victory strong { color:#f1fbff !important; text-shadow:0 4px 18px #102d3b !important; }
 #stage { touch-action:pan-y pinch-zoom; }
 .bd-breakdown { color:inherit; font-size:clamp(18px,2.8vw,36px); line-height:1.35; font-weight:800; margin-top:6px; }
 
