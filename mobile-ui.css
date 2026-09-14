@@ -57,7 +57,6 @@ body.mobile-ui.tall #stage .cell.formula-cell,body.mobile-ui.tall #stage .cell.e
 }
 body.mobile-ui.tall #stage .cell.formula-cell { background:#1B291E; }
 body.mobile-ui.tall #stage .cell.formula-cell .tag { position:absolute !important; display:flex; justify-content:space-between; align-items:center; top:4px; left:6px; right:6px; transform:none; width:auto; max-width:none; height:12px; font:500 10px/12px system-ui,sans-serif !important; color:#D3DDCC; opacity:1; }
-body.mobile-ui.tall #stage .cell.formula-cell .tag span:nth-child(2) { opacity:.65; }
 body.mobile-ui.tall #stage .cell.formula-cell .stepper.formula { grid-template-columns:var(--sk-btn,34px) minmax(0,1fr) var(--sk-btn,34px) !important; grid-template-rows:1fr 1fr !important; gap:4px 2px !important; min-height:72px !important; }
 body.mobile-ui.tall #stage .cell.formula-cell .stepper.formula button,body.mobile-ui.tall #stage .cell.extra-cell button { width:var(--sk-btn,34px) !important; min-width:var(--sk-btn,34px) !important; max-width:var(--sk-btn,34px) !important; height:var(--sk-btn,34px) !important; min-height:var(--sk-btn,34px) !important; max-height:var(--sk-btn,34px) !important; border-radius:8px; font:500 20px/1 system-ui,sans-serif !important; background:#ffffff0A; border:1px solid #ffffff26; padding:0 !important; }
 body.mobile-ui.tall #stage .n.form { display:flex !important; flex-direction:column; align-items:center; justify-content:center; gap:4px; line-height:1; min-width:0; width:100%; }
@@ -546,13 +545,8 @@ body.mobile-ui.tall #stage .skills {
 body.mobile-ui.tall #stage .skill:last-child {
   margin-bottom:0 !important;
 }
-body.mobile-ui.tall #stage .skill:has(.flags:not(:empty)) {
-  /* Header + special-action row + two vertically stacked +/- controls. */
-  min-height:max(var(--sk-h,70px), calc(var(--sk-btn,22px) * 2 + 56px)) !important;
-}
-
-/* A special-action row takes space from its own card.  Fit the +/- controls
-   to the remaining coloured cell so they never spill below that cell. */
+/* Fit the +/- controls to the coloured cell without exceeding the chosen size. */
+.skill-head,.flag-items { display:contents; }
 body.mobile-ui.tall #stage .cell.formula-cell,
 body.mobile-ui.tall #stage .cell.extra-cell {
   height:100% !important;
@@ -562,7 +556,7 @@ body.mobile-ui.tall #stage .cell.formula-cell .stepper.formula {
   display:grid !important;
   height:100% !important;
   min-height:0 !important;
-  --fit-step:var(--sk-btn,34px);
+  --fit-step:var(--card-step,var(--sk-btn,34px));
   grid-template-columns:var(--fit-step) minmax(0,1fr) var(--fit-step) !important;
   grid-template-rows:var(--fit-step) var(--fit-step) !important;
   grid-template-areas:"impUp num gearUp" "impDn num gearDn" !important;
@@ -582,7 +576,7 @@ body.mobile-ui.tall #stage .cell.formula-cell .stepper.formula button {
 body.mobile-ui.tall #stage .cell.extra-cell .stepper.extra {
   height:100% !important;
   min-height:0 !important;
-  --fit-step:var(--sk-btn,34px);
+  --fit-step:var(--card-step,var(--sk-btn,34px));
   grid-template-columns:var(--fit-step) minmax(0,1fr) var(--fit-step) !important;
 }
 body.mobile-ui.tall #stage .cell.extra-cell .stepper.extra button {
@@ -602,13 +596,12 @@ body.mobile-ui #stage {
   --calc-success:#E07A5F;
   --calc-total:#FFF2D7;
 }
-body.mobile-ui #stage .formula-cell .tag span:nth-child(1),
+body.mobile-ui #stage .formula-cell .tag .tag-base,
 body.mobile-ui #stage .n.form .a,
 body.mobile-ui #stage .n.extra2 .ea { color:var(--calc-base) !important; }
-body.mobile-ui #stage .formula-cell .tag span:nth-child(2),
 body.mobile-ui #stage .n.form .b,
 body.mobile-ui #stage .n.extra2 .eb { color:var(--calc-improve) !important; }
-body.mobile-ui #stage .formula-cell .tag span:nth-child(3),
+body.mobile-ui #stage .formula-cell .tag .tag-gear,
 body.mobile-ui #stage .n.form .c { color:var(--calc-gear) !important; }
 body.mobile-ui #stage .n.form .d,
 body.mobile-ui #stage .n.extra2 .ec { color:var(--calc-success) !important; }
@@ -691,4 +684,173 @@ body.round-blessed.mobile-ui #stage .flag[data-flag="success"] .ft {
 body.round-blessed.mobile-ui #stage .flag[data-flag="success"].en .ft {
   background:#E9AEA1 !important;
   box-shadow:inset 0 0 0 1px #FFF0E9;
+}
+
+/* Skill actions live in the otherwise unused title strip on every skill. */
+body.mobile-ui.tall #stage .skill,
+body.mobile-ui.tall #stage .skill.cols2,
+body.mobile-ui.tall #stage .skill:not(.cols2) {
+  grid-template-rows:22px minmax(0,1fr) !important;
+  grid-template-areas:"head head" "gen extra" !important;
+}
+body.mobile-ui.tall #stage .skill.cols2 {
+  grid-template-areas:"head head" "gen gen" !important;
+}
+body.mobile-ui.tall #stage .skill-head {
+  grid-area:head;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  min-width:0;
+  height:22px;
+}
+body.mobile-ui.tall #stage .skill-head .skname {
+  position:static !important;
+  flex:0 0 auto;
+  align-self:center;
+  height:20px !important;
+  line-height:20px !important;
+}
+body.mobile-ui.tall #stage .skill-head .flags {
+  position:static !important;
+  display:flex !important;
+  flex:1 1 auto;
+  flex-wrap:nowrap !important;
+  align-items:center !important;
+  gap:4px !important;
+  width:auto !important;
+  min-width:0 !important;
+  height:22px !important;
+  max-height:22px !important;
+  overflow:visible !important;
+}
+body.mobile-ui.tall #stage .skill-head .flag-items {
+  display:flex;
+  flex:1 1 auto;
+  align-items:center;
+  gap:3px;
+  min-width:0;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scrollbar-width:none;
+}
+body.mobile-ui.tall #stage .skill-head .flag-items::-webkit-scrollbar { display:none; }
+body.mobile-ui.tall #stage .skill-head .flag .ft,
+body.mobile-ui.tall #stage .skill-head .flag.en .ft,
+body.mobile-ui.tall #stage .skill-head .flag.simple .ft {
+  height:20px !important;
+  min-height:20px !important;
+  max-height:20px !important;
+  padding:0 6px !important;
+  font-size:9px !important;
+  line-height:20px !important;
+  white-space:nowrap;
+}
+body.mobile-ui.tall #stage .skill-head .ringmark {
+  flex:0 0 auto;
+  height:20px;
+  line-height:20px;
+  white-space:nowrap;
+}
+body.mobile-ui.tall #stage .skill-head .skgear {
+  position:static !important;
+  flex:0 0 24px !important;
+  width:24px !important;
+  min-width:24px !important;
+  height:22px !important;
+  margin:0 !important;
+  padding:0 !important;
+  font-size:12px !important;
+}
+
+/* High-contrast blessed controls: each action keeps a distinct readable hue. */
+body.round-blessed.mobile-ui #stage .skill-head .flag .ft,
+body.round-blessed.mobile-ui #stage .round-extra .flag .ft {
+  opacity:1 !important;
+  font-weight:850 !important;
+  text-shadow:none !important;
+  box-shadow:inset 0 0 0 1px #FFFFFF90;
+}
+body.round-blessed.mobile-ui #stage .flag[data-flag="reroll"] .ft,
+body.round-blessed.mobile-ui #stage .flag[data-flag="rr"] .ft {
+  color:#214E60 !important; border-color:#5C8795 !important; background:#D5E8ED !important;
+}
+body.round-blessed.mobile-ui #stage .flag[data-flag="arr"] .ft {
+  color:#5A3D68 !important; border-color:#92729D !important; background:#E5D9EA !important;
+}
+body.round-blessed.mobile-ui #stage .flag[data-flag="plus1"] .ft,
+body.round-blessed.mobile-ui #stage .flag[data-flag="p1"] .ft {
+  color:#704900 !important; border-color:#A67822 !important; background:#F2DEAA !important;
+}
+body.round-blessed.mobile-ui #stage .flag[data-flag="success"] .ft {
+  color:#84362D !important; border-color:#A75648 !important; background:#F0C9BF !important;
+}
+body.round-blessed.mobile-ui #stage .flag[data-flag="ring"] .ft {
+  color:#40531F !important; border-color:#738348 !important; background:#E0E7C9 !important;
+}
+body.round-blessed.mobile-ui #stage .flag.used .ft {
+  color:#FFFFFF !important;
+  background:#40515B !important;
+  border-color:#26343C !important;
+  box-shadow:inset 0 0 0 1px #FFFFFF55 !important;
+}
+body.round-blessed.mobile-ui #stage .round-mode {
+  color:#513864 !important; border-color:#86699A !important; background:#E7DDEF !important;
+}
+body.round-blessed.mobile-ui #stage #roundGear {
+  color:#314652 !important; border-color:#7A909A !important; background:#E2ECEF !important;
+}
+
+/* Blessed round settings use a light parchment panel with explicit states. */
+body.round-blessed #rqPop { background:rgba(55,43,39,.58) !important; backdrop-filter:blur(3px); }
+body.round-blessed #rqPop .box {
+  background:linear-gradient(155deg,#FFF9EA,#F1DFC1) !important;
+  border:2px solid #8D694B !important;
+  color:#302822 !important;
+  box-shadow:0 18px 55px #3C292D66, inset 0 0 0 1px #FFFFFFA8;
+}
+body.round-blessed #rqPop h4 { color:#3A2D25 !important; font-size:18px; }
+body.round-blessed #rqPop .row {
+  padding:7px 8px;
+  border:1px solid #C8AF8A;
+  border-radius:9px;
+  background:#FFF8E7B8;
+  color:#3A3028;
+}
+body.round-blessed #rqPop .row span { font-weight:800; color:#49372B; }
+body.round-blessed #rqPop .row b { color:#1E566B; font-weight:900; }
+body.round-blessed #rqPop .row button {
+  width:38px; height:38px;
+  border:1px solid #8C673E;
+  border-radius:8px;
+  background:#EFD59E;
+  color:#513712;
+  font-size:22px;
+  font-weight:900;
+}
+body.round-blessed #rqPop .setchk {
+  padding:9px 10px;
+  border:1px solid #C7AD87;
+  border-radius:9px;
+  background:#FFF8E7A8;
+  color:#3C3028 !important;
+  font-weight:750;
+}
+body.round-blessed #rqPop .setchk input { width:18px; height:18px; accent-color:#416A78; vertical-align:-4px; }
+body.round-blessed #rqPop .round-condition span { color:#43372E; border-color:#BCA581; background:#F5E8CE; }
+body.round-blessed #rqPop .round-condition input[value="blessed"] + span { color:#254E5D; border-color:#82A5AE; background:#E1EEF1; }
+body.round-blessed #rqPop .round-condition input[value="cursed"] + span { color:#703648; border-color:#B78391; background:#F0DCE1; }
+body.round-blessed #rqPop .round-condition input:checked + span {
+  border-width:3px !important;
+  border-color:#315C6B !important;
+  box-shadow:inset 0 -3px 0 #79A3AF,0 0 0 2px #FFFFFF !important;
+}
+body.round-blessed #rqPop #rqOk {
+  min-height:44px;
+  border:1px solid #1E4653;
+  border-radius:9px;
+  background:#315D6A;
+  color:#FFFFFF;
+  font-size:15px;
+  font-weight:900;
 }

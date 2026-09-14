@@ -3052,7 +3052,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260915-t">
+<link rel="stylesheet" href="mobile-ui.css?v=20260915-v">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -3764,7 +3764,6 @@ function paintSkillFlags(sid){
     return h;
   }
   html+=many("리롤","reroll")+many("+1","plus1")+many("추가⚄","success");
-  html+='<button type="button" class="rgear skgear" data-skgear="'+sid+'">⚙</button>';
   return html;
 }
 function openSqPop(sid){
@@ -4027,13 +4026,13 @@ function render(){
     const bEx=extra?pxBonus(slot, sk.id, extra.id):0;
     const any=bVal||bGen||bEx;
     let html='<div class="skill'+(!extra?' cols2':'')+'" data-skill="'+sk.id+'">';
-    html+='<div class="skname">'+sk.kr+'</div>';
+    html+='<div class="skill-head"><div class="skname">'+sk.kr+'</div><div class="flags"><div class="flag-items">'+paintSkillFlags(sk.id)+'</div><button type="button" class="rgear skgear" data-skgear="'+sk.id+'">⚙</button></div></div>';
     const A=baseOf(inv, sk.id);
     const B=(s.val||A)-A;
     const C=s.gear||0;
     const S=((s.success&&s.success.n)||0);
     const T=A+B+C+bVal+S;
-    html+='<div class="cell die die-gen formula-cell'+(bVal||bGen?" pxon":"")+'" data-part="val"><div class="tag"><span>기본</span><span>일반</span><span>장비</span></div>'+formulaStepper(A,B,C,S,T)+'</div>';
+    html+='<div class="cell die die-gen formula-cell'+(bVal||bGen?" pxon":"")+'" data-part="val"><div class="tag"><span class="tag-base">기본</span><span class="tag-gear">장비</span></div>'+formulaStepper(A,B,C,S,T)+'</div>';
     if(extra){
       const eA=s.val||A;
       const eN=(s[extra.id]||0)+bEx;
@@ -4042,7 +4041,7 @@ function render(){
     } else {
       html+='<div class="cell extra-cell extra-ph" aria-hidden="true"></div>';
     }
-    html+='<div class="flags">'+paintSkillFlags(sk.id)+'</div></div>';
+    html+='</div>';
     return html;
   }).join("");
   document.getElementById("note").value=state().note||"";
@@ -5742,6 +5741,19 @@ document.addEventListener("click", function(e){
 });
 
 
+function fitSkillButtons(maxSize){
+  document.querySelectorAll("#skills .skill").forEach(function(skill){
+    const cell=skill.querySelector(".cell.formula-cell");
+    if(!cell) return;
+    const css=getComputedStyle(cell);
+    const inner=cell.clientHeight-(parseFloat(css.paddingTop)||0)-(parseFloat(css.paddingBottom)||0);
+    const gap=2;
+    // Both vertical controls lose the same amount of height.  Cards without
+    // action buttons keep the requested size whenever the coloured cell fits it.
+    const fitted=Math.max(14,Math.floor((inner-gap)/2));
+    skill.style.setProperty("--card-step",Math.min(maxSize,fitted)+"px");
+  });
+}
 function applyScale(){
   const adjH=parseInt(localStorage.getItem("eh-skh-adj")||"0",10);
   const adjF=parseInt(localStorage.getItem("eh-skf-adj")||"0",10);
@@ -5770,6 +5782,7 @@ function applyScale(){
   document.documentElement.style.setProperty("--sk-xtr",Math.max(.7,1-adjG*.025)+"fr");
   document.documentElement.style.setProperty("--sk-flag","12px");
   document.documentElement.style.setProperty("--sk-tag","11px");
+  fitSkillButtons(b);
   const hv=document.getElementById("skHval"), fv=document.getElementById("skFval"), bv=document.getElementById("skBval"), gv=document.getElementById("skGval");
   const hi=document.getElementById("skH"), fi=document.getElementById("skF"), bi=document.getElementById("skB"), gi=document.getElementById("skG");
   function lab(n,zero){ return n===0?zero:(n>0?"+"+n:String(n)); }
@@ -6357,7 +6370,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260915-t";
+const APP_VER="20260915-v";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;
