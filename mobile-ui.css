@@ -155,6 +155,7 @@ body.round-blessed #stage,body.round-blessed .dice-sheet { box-shadow:0 0 28px r
 body.round-cursed #stage,body.round-cursed .dice-sheet { box-shadow:0 0 28px rgba(185,39,79,.25); }
 .round-mode { padding:2px 5px; border:1px solid var(--gold); border-radius:5px; color:var(--gold2); font-size:10px; font-weight:800; white-space:nowrap; }
 .round-state { display:inline-block; margin-left:7px; padding:4px 8px; border-radius:7px; font-size:14px; line-height:1.15; font-weight:900; vertical-align:middle; }
+.round-state[hidden] { display:none !important; }
 .round-state.blessed { color:#fff; border:1px solid #dcefff; background:#54718f; }.round-state.cursed { color:#ffd9e2; border:1px solid #b75570; background:#58182b; }
 .board-dice { position:fixed; inset:0; z-index:90; display:none; align-items:center; justify-content:center; flex-direction:column; padding:20px; text-align:center; background:rgba(5,8,12,.9); }
 .board-dice.on { display:flex; }.board-dice.blessed { background:rgba(25,45,66,.93); color:#fff; }.board-dice.cursed { background:rgba(53,8,24,.94); color:#ffe3e9; }
@@ -349,6 +350,22 @@ body.round-blessed.mobile-ui #stage .cell button { background:#fff; border-color
 .dice-grid.shattered .dice-face:nth-child(3n) { animation-delay:.07s; }
 .board-dice.shattered { animation:board-shatter .58s cubic-bezier(.2,.7,.2,1); }
 .board-dice.shattered::after { content:"✦  ✧  ✦"; position:absolute; inset:46% 0 auto; color:#ffb09c; font-size:clamp(30px,6vw,76px); letter-spacing:.6em; text-align:center; pointer-events:none; animation:shatter-sparks .65s ease-out both; }
+.dice-shattered { background:radial-gradient(ellipse at 50% 35%,rgba(109,21,32,.42),rgba(4,3,7,.94) 72%) !important; }
+.dice-shattered .dice-sheet { position:relative; overflow:hidden; border-color:#9b433f !important; box-shadow:0 0 0 100vmax rgba(18,0,8,.18),0 0 38px #7b202bcc !important; }
+.dice-shattered .dice-sheet::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:.86; background:linear-gradient(57deg,transparent 0 44%,rgba(255,193,167,.75) 44.3% 44.8%,transparent 45.1% 100%),linear-gradient(138deg,transparent 0 53%,rgba(255,150,136,.64) 53.3% 53.8%,transparent 54.1% 100%),linear-gradient(13deg,transparent 0 66%,rgba(116,12,24,.82) 66.4% 67%,transparent 67.4% 100%); mix-blend-mode:screen; animation:crack-flash .72s ease-out both; }
+.dice-shattered .dice-sheet > * { position:relative; z-index:1; }
+.dice-grid.shattered .dice-face { color:#e2d2cf; background:linear-gradient(135deg,#443239 0 47%,#170f15 48% 52%,#2d2027 53%); text-shadow:0 2px 3px #000; }
+.dice-result.failure { min-height:48px; padding-top:6px; color:#ffd1ca; text-shadow:0 2px 7px #4c0710; }
+.dice-result.failure .dice-failure { display:block; color:#ff9f91; font-size:clamp(26px,8vw,42px); letter-spacing:.08em; animation:failure-stamp .5s cubic-bezier(.15,.8,.25,1.25); }
+.dice-result.failure span { display:block; margin-top:3px; font-size:12px; }
+.board-dice.shattered { background:radial-gradient(ellipse at 50% 42%,#5b1724 0,#1b0710 55%,#050407 100%) !important; box-shadow:inset 0 0 110px #000; }
+.board-dice.shattered .bd-result.failure strong { color:#ffaea1; font-size:clamp(45px,8vw,96px); letter-spacing:.08em; text-shadow:0 4px 16px #4a0610; }
+.board-dice.shattered .bd-result.failure small { display:block; color:#ffd0c8; margin-top:8px; }
+body.round-blessed .dice-shattered { background:radial-gradient(ellipse at 50% 35%,rgba(123,113,118,.5),rgba(41,34,40,.94) 72%) !important; }
+body.round-blessed .dice-shattered .dice-sheet { border-color:#8f8585 !important; box-shadow:0 0 38px #5f5963cc !important; }
+body.round-cursed .dice-shattered { background:radial-gradient(ellipse at 50% 35%,rgba(159,16,38,.56),rgba(19,0,9,.96) 72%) !important; }
+@keyframes crack-flash { 0% { opacity:0; transform:scale(.82); } 30% { opacity:1; transform:scale(1.04); } 100% { opacity:.42; transform:scale(1); } }
+@keyframes failure-stamp { 0% { opacity:0; transform:scale(1.7); filter:blur(8px); } 55% { opacity:1; transform:scale(.94); filter:none; } 100% { transform:scale(1); } }
 @keyframes dice-tray-shatter { 0%,100% { transform:translateX(0); } 18% { transform:translateX(-11px) rotate(-.4deg); } 38% { transform:translateX(10px) rotate(.35deg); } 58% { transform:translateX(-6px); } }
 @keyframes dice-face-shatter { 0% { transform:scale(1); filter:none; } 35% { transform:translate(-4px,3px) rotate(-7deg) scale(.94); filter:brightness(.6); } 65% { transform:translate(5px,-3px) rotate(8deg) scale(.91); } 100% { transform:scale(1); filter:none; } }
 @keyframes board-shatter { 0%,100% { transform:translateX(0); } 20% { transform:translateX(-18px); } 42% { transform:translateX(15px); } 65% { transform:translateX(-8px); } }

@@ -3040,7 +3040,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260914-e">
+<link rel="stylesheet" href="mobile-ui.css?v=20260914-f">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -4571,7 +4571,7 @@ function parseSeats(raw){
 }
 let diceOverlay=null;
 const DICE_SOUND_KEY="eh-dice-sound";
-let diceAudio=null, diceSoundTimer=null, boardSoundTimer=null, boardSoundOn=false;
+let diceAudio=null, diceSoundTimer=null, boardSoundTimer=null, boardSoundOn=false, lastBoardFailure="";
 function diceSoundEnabled(){ return localStorage.getItem(DICE_SOUND_KEY)!=="off"; }
 function diceAudioContext(){
   if(!diceAudio){ const Ctx=window.AudioContext||window.webkitAudioContext; if(Ctx) diceAudio=new Ctx(); }
@@ -4584,6 +4584,19 @@ function playDiceClick(){
   osc.type="triangle"; osc.frequency.setValueAtTime(180+Math.random()*170,now);
   gain.gain.setValueAtTime(.0001,now); gain.gain.exponentialRampToValueAtTime(.09,now+.008); gain.gain.exponentialRampToValueAtTime(.0001,now+.065);
   osc.connect(gain).connect(ctx.destination); osc.start(now); osc.stop(now+.07);
+}
+function playDiceFailure(){
+  const ctx=diceAudioContext(); if(!ctx) return;
+  const now=ctx.currentTime, osc=ctx.createOscillator(), gain=ctx.createGain();
+  osc.type="sawtooth"; osc.frequency.setValueAtTime(118,now); osc.frequency.exponentialRampToValueAtTime(42,now+.34);
+  gain.gain.setValueAtTime(.0001,now); gain.gain.exponentialRampToValueAtTime(.17,now+.018); gain.gain.exponentialRampToValueAtTime(.0001,now+.39);
+  osc.connect(gain).connect(ctx.destination); osc.start(now); osc.stop(now+.4);
+}
+function playBoardFailure(x){
+  if(!x.shattered||!x.sound){ lastBoardFailure=""; return; }
+  const key=[x.label,x.baseCount,x.modifier,x.values.join(",")].join("|");
+  if(key===lastBoardFailure) return;
+  lastBoardFailure=key; playDiceFailure();
 }
 function setDiceRollSound(on){
   clearInterval(diceSoundTimer); diceSoundTimer=null;
@@ -5235,7 +5248,7 @@ function renderBoard(){
       const cols=Math.min(count,Math.max(1,Math.ceil(Math.sqrt(count*innerWidth/Math.max(180,innerHeight*.55)))));
       die.style.setProperty("--bd-cols",cols);
       die.style.setProperty("--bd-rows",Math.ceil(count/cols));
-      die.innerHTML='<div class="bd-kicker">'+label+' · '+threshold+' 이상 성공</div><div class="bd-name">'+active.name+' · '+x.label+'</div><div class="bd-faces'+(x.rolling?' rolling':'')+'">'+x.values.map(function(v){ const success=!x.rolling&&v>=threshold; return '<span class="bd-face'+(success?' success':'')+'" aria-label="'+v+(success?' 성공':' 실패')+'">'+v+(success?'<span class="bd-check" aria-hidden="true">✓</span>':'')+'</span>'; }).join("")+'</div><div class="bd-result" aria-live="polite">'+(x.rolling?'<strong>굴리는 중…</strong>':'<strong>'+x.successes+'</strong> 성공'+(x.sixExtra?' <small>(6보정 +'+x.sixExtra+')</small>':''))+'</div>';
+      die.innerHTML='<div class="bd-kicker">'+label+' · '+threshold+' 이상 성공</div><div class="bd-name">'+active.name+' · '+x.label+'</div><div class="bd-faces'+(x.rolling?' rolling':'')+'">'+x.values.map(function(v){ const success=!x.rolling&&v>=threshold; return '<span class="bd-face'+(success?' success':'')+'" aria-label="'+v+(success?' 성공':' 실패')+'">'+v+(success?'<span class="bd-check" aria-hidden="true">✓</span>':'')+'</span>'; }).join("")+'</div><div class="bd-result'+(x.shattered?' failure':'')+'" aria-live="polite">'+(x.rolling?'<strong>굴리는 중…</strong>':x.shattered?'<strong>완전 실패</strong><small>0 성공</small>':'<strong>'+x.successes+'</strong> 성공'+(x.sixExtra?' <small>(6보정 +'+x.sixExtra+')</small>':''))+'</div>';
       const base=Number.isFinite(x.baseCount)?x.baseCount:x.values.length;
       const modifier=Number.isFinite(x.modifier)?x.modifier:0;
       const total=Number.isFinite(x.count)?x.count:x.values.length;
@@ -5244,7 +5257,8 @@ function renderBoard(){
       breakdown.textContent="기술치 "+base+" · 판정 보정 "+(modifier>0?"+":"")+modifier+" · 주사위 "+total+"개";
       die.appendChild(breakdown);
       setBoardDiceSound(!!(x.rolling&&x.sound));
-    } else { setBoardDiceSound(false); die.hidden=true; die.className="board-dice"; die.innerHTML=""; }
+      playBoardFailure(x);
+    } else { lastBoardFailure=""; setBoardDiceSound(false); die.hidden=true; die.className="board-dice"; die.innerHTML=""; }
   }
   g.querySelectorAll("img[data-bimg]").forEach(function(im){
     const inv=INV.find(function(x){return x.id===im.getAttribute("data-bimg");});
@@ -5887,6 +5901,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     if(dice.rolling){ result.textContent="주사위가 구르는 중…"; return; }
     if(dice.pendingAction){ result.textContent=actionInfo(dice.pendingAction).label+"을 적용할 주사위를 선택하세요. 같은 버튼을 다시 누르거나 Esc로 취소합니다."; return; }
     const successes=successTotal(), q=rqOf();
+    if(dice.shattered){ result.innerHTML='<strong class="dice-failure">완전 실패</strong><span>0 성공 · '+dice.values.join(" · ")+'</span>'; return; }
     result.innerHTML='<strong>'+successes+' 성공</strong>'+(q.sixBonus&&dice.values.filter(function(v){return v===6;}).length?' (6보정 +'+dice.values.filter(function(v){return v===6;}).length+')':'')+' · '+dice.values.join(" · ");
   }
   function actionButton(type,label,count){
@@ -5928,7 +5943,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     rollTimer=setInterval(function(){
       targets.forEach(function(i){ dice.values[i]=randomDie(); });
       paintDice(); publishDiceOverlay();
-      if(++ticks>=15){ clearInterval(rollTimer); rollTimer=null; dice.rolling=false; dice.shattered=successTotal()===0; setDiceRollSound(false); if(navigator.vibrate) navigator.vibrate(18); paintDice(); paintActions(); publishDiceOverlay(); recordDice(reason||"첫 굴림",indices); }
+      if(++ticks>=15){ clearInterval(rollTimer); rollTimer=null; dice.rolling=false; dice.shattered=successTotal()===0; setDiceRollSound(false); if(dice.shattered){ if(diceSoundEnabled()) playDiceFailure(); if(navigator.vibrate) navigator.vibrate([24,22,96]); } else if(navigator.vibrate) navigator.vibrate(18); paintDice(); paintActions(); publishDiceOverlay(); recordDice(reason||"첫 굴림",indices); }
     },85);
   }
   function useAction(type){
@@ -6050,7 +6065,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260914-e";
+const APP_VER="20260914-f";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;
