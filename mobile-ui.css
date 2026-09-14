@@ -546,3 +546,35 @@ body.mobile-ui.tall #stage .skills {
 body.mobile-ui.tall #stage .skill:last-child {
   margin-bottom:0 !important;
 }
+
+/* A special-action row takes space from its own card.  Fit the +/- controls
+   to the remaining coloured cell so they never spill below that cell. */
+body.mobile-ui.tall #stage .cell.formula-cell .stepper.formula {
+  display:grid !important;
+  height:100% !important;
+  min-height:0 !important;
+  --fit-step: min(var(--sk-btn,34px), calc((100% - 2px) / 2));
+  grid-template-columns:var(--fit-step) minmax(0,1fr) var(--fit-step) !important;
+}
+body.mobile-ui.tall #stage .cell.formula-cell .stepper.formula button {
+  width:var(--fit-step) !important;
+  min-width:var(--fit-step) !important;
+  max-width:var(--fit-step) !important;
+  height:var(--fit-step) !important;
+  min-height:var(--fit-step) !important;
+  max-height:var(--fit-step) !important;
+}
+body.mobile-ui.tall #stage .cell.extra-cell .stepper.extra {
+  height:100% !important;
+  min-height:0 !important;
+  --fit-step: min(var(--sk-btn,34px), calc(100% - 2px));
+  grid-template-columns:var(--fit-step) minmax(0,1fr) var(--fit-step) !important;
+}
+body.mobile-ui.tall #stage .cell.extra-cell .stepper.extra button {
+  width:var(--fit-step) !important;
+  min-width:var(--fit-step) !important;
+  max-width:var(--fit-step) !important;
+  height:var(--fit-step) !important;
+  min-height:var(--fit-step) !important;
+  max-height:var(--fit-step) !important;
+}
