@@ -173,8 +173,14 @@ body.round-cursed #stage,body.round-cursed .dice-sheet { box-shadow:0 0 28px rgb
 }
 
 /* Dense mobile sheet: fit all five skills into the available viewport. */
+html:has(body.mobile-ui), body.mobile-ui { min-height:100dvh; background:var(--bg); }
 body.mobile-ui { padding-bottom:0 !important; }
 body.mobile-ui #stage { height:100%; min-height:0; }
+/* iOS can report a shorter dynamic viewport after its browser chrome changes.
+   Reserve the large viewport so the skill-height calculation fills that space too. */
+@supports (height:100lvh) {
+  html:has(body.mobile-ui), body.mobile-ui { height:100lvh; min-height:100lvh; }
+}
 body.mobile-ui.tall #stage .top {
   grid-template-columns:46px minmax(0,1fr) 38px;
   grid-template-rows:52px auto 36px;
@@ -308,6 +314,7 @@ body.mobile-ui #scalePop .scale-actions button { width:100%; height:40px; margin
 
 /* Bright platinum blessing and a dice tray with a reserved tap margin. */
 body.round-blessed { --bg:#f5f5f3; --card:#ffffff; --gold:#697078; --gold2:#343e49; --cream:#27313b; --muted:#5a6570; --line:#c5cbd1; --btn:#e9edf0; background:radial-gradient(ellipse at top,#fff 30%,#e8ebee 100%) !important; color:var(--cream); }
+html:has(body.round-blessed) { background:#e8ebee; }
 body.round-blessed #stage, body.round-blessed .dice-sheet { box-shadow:0 0 32px rgba(255,255,255,.95),0 0 12px rgba(177,182,188,.35); }
 body.round-blessed.mobile-ui #stage .top,
 body.round-blessed .dice-sheet { background:linear-gradient(135deg,#fff,#f0f1f2) !important; }
@@ -411,6 +418,11 @@ body.round-cursed .dice-celebrating .dice-face { border-color:#c682f2; backgroun
 .bd-result { margin-top:8px; font-size:clamp(30px,5vw,72px); line-height:1.1; font-weight:900; }
 .bd-result strong { font-size:1.4em; font-variant-numeric:tabular-nums; }
 .bd-result small { display:block; margin-top:4px; font-size:clamp(18px,2.5vw,32px); }
+.bd-close { position:absolute; z-index:4; top:clamp(12px,2.4vw,28px); right:clamp(12px,2.4vw,28px); width:clamp(42px,5vw,64px); height:clamp(42px,5vw,64px); border:2px solid currentColor; border-radius:50%; color:#f8fbff; background:rgba(0,0,0,.42); font-size:clamp(28px,4vw,44px); line-height:1; font-weight:400; }
+.board-dice.blessed .bd-close { color:#142832; background:rgba(255,255,255,.62); }
+.board-dice.blessed.celebrating .bd-close,.board-dice.blessed.shattered .bd-close { color:#f8fbff; background:rgba(0,0,0,.42); }
+.bd-reopen { position:fixed; z-index:91; right:clamp(14px,3vw,36px); bottom:clamp(14px,3vw,36px); min-height:48px; padding:10px 16px; border:2px solid #d8edf4; border-radius:999px; color:#f8fbff; background:#102d3be8; box-shadow:0 4px 16px #0008; font-size:clamp(15px,2.3vw,24px); font-weight:900; }
+.bd-reopen[hidden] { display:none; }
 
 /* Blessed condition card: parchment, rose light and weathered silver. */
 body.round-blessed { --bg:#d7b4a8; --card:#f2e5cc; --gold:#927357; --gold2:#65483e; --cream:#3d342f; --muted:#796258; --line:#a79b8d; --btn:#e4d2b9; background:radial-gradient(ellipse at 50% 0%,#fff0d8 0%,#e5b3a4 40%,#a87778 100%) !important; }
@@ -511,4 +523,26 @@ body.round-blessed.mobile-ui #stage .cell button { background:#f7ecd8; border-co
   -webkit-user-select:text;
   user-select:text;
   -webkit-touch-callout:default;
+}
+
+/* The skill list owns the remaining viewport.  A taller manual card setting
+   scrolls inside this area instead of slipping behind the bottom viewport. */
+body.mobile-ui.tall #stage {
+  min-height:0 !important;
+  background:var(--bg);
+}
+body.mobile-ui.tall {
+  padding-bottom:0 !important;
+}
+body.mobile-ui.tall #stage .skills {
+  flex:1 1 0 !important;
+  min-height:0 !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain;
+  padding-bottom:0 !important;
+  background:var(--bg);
+}
+body.mobile-ui.tall #stage .skill:last-child {
+  margin-bottom:0 !important;
 }

@@ -3052,7 +3052,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260914-n">
+<link rel="stylesheet" href="mobile-ui.css?v=20260914-o">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -5761,7 +5761,8 @@ function applyScale(){
   const autoH=Math.floor((avail-gap*(count-1))/count);
   const h=Math.max(70,Math.min(168,autoH+adjH));
   const f=Math.max(22,Math.min(42,Math.round(h*.31)+adjF));
-  const b=Math.max(22,Math.min(40,Math.round(h*.28)+adjB));
+  // Keep the + / - controls proportional to each skill card as its height changes.
+  const b=Math.max(22,Math.min(48,Math.round(h*.30)+adjB));
   document.documentElement.style.setProperty("--sk-h",h+"px");
   document.documentElement.style.setProperty("--sk-fs",f+"px");
   document.documentElement.style.setProperty("--sk-btn",b+"px");
@@ -6356,7 +6357,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260914-n";
+const APP_VER="20260914-o";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;
@@ -6419,4 +6420,3 @@ async function applyAppUpdate(){
 </div>
 </body>
 </html>
-
