@@ -3040,7 +3040,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260914-f">
+<link rel="stylesheet" href="mobile-ui.css?v=20260914-g">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -3172,7 +3172,7 @@
     </button>
     <div class="dice-result" id="diceResult">칸을 누르거나 휴대폰을 흔들어 굴리세요</div>
     <div class="dice-actions" id="diceActions"></div>
-    <button type="button" class="motion-permission" id="motionPermission" hidden>휴대폰 흔들기 켜기</button>
+    <button type="button" class="motion-permission" id="motionPermission" hidden>흔들기 안 되면 켜기</button>
     <p class="dice-help">다시 굴리려면 휴대폰을 흔드세요. 리롤 또는 +1 버튼을 누른 뒤 적용할 주사위를 선택하세요.</p>
   </section>
 </div>
@@ -4571,7 +4571,7 @@ function parseSeats(raw){
 }
 let diceOverlay=null;
 const DICE_SOUND_KEY="eh-dice-sound";
-let diceAudio=null, diceSoundTimer=null, boardSoundTimer=null, boardSoundOn=false, lastBoardFailure="";
+let diceAudio=null, diceSoundTimer=null, boardSoundTimer=null, boardSoundOn=false, lastBoardFailure="", lastBoardVictory="";
 function diceSoundEnabled(){ return localStorage.getItem(DICE_SOUND_KEY)!=="off"; }
 function diceAudioContext(){
   if(!diceAudio){ const Ctx=window.AudioContext||window.webkitAudioContext; if(Ctx) diceAudio=new Ctx(); }
@@ -4592,11 +4592,30 @@ function playDiceFailure(){
   gain.gain.setValueAtTime(.0001,now); gain.gain.exponentialRampToValueAtTime(.17,now+.018); gain.gain.exponentialRampToValueAtTime(.0001,now+.39);
   osc.connect(gain).connect(ctx.destination); osc.start(now); osc.stop(now+.4);
 }
+function playDiceVictory(successCount){
+  const ctx=diceAudioContext(); if(!ctx) return;
+  const level=Math.min(Math.max(successCount||1,1),12), volume=.055+level*.008;
+  [392,523,659,784,1047].forEach(function(freq,index){
+    const now=ctx.currentTime+index*.095, gain=ctx.createGain();
+    gain.gain.setValueAtTime(.0001,now); gain.gain.exponentialRampToValueAtTime(volume,now+.022); gain.gain.exponentialRampToValueAtTime(.0001,now+.36);
+    [freq,freq*1.004].forEach(function(tone,voice){
+      const osc=ctx.createOscillator(); osc.type=voice?"triangle":"sawtooth"; osc.frequency.setValueAtTime(tone,now);
+      osc.connect(gain); osc.start(now); osc.stop(now+.38);
+    });
+    gain.connect(ctx.destination);
+  });
+}
 function playBoardFailure(x){
   if(!x.shattered||!x.sound){ lastBoardFailure=""; return; }
   const key=[x.label,x.baseCount,x.modifier,x.values.join(",")].join("|");
   if(key===lastBoardFailure) return;
   lastBoardFailure=key; playDiceFailure();
+}
+function playBoardVictory(x){
+  if(!x.celebrating||!x.sound){ lastBoardVictory=""; return; }
+  const key=[x.label,x.baseCount,x.modifier,x.values.join(",")].join("|");
+  if(key===lastBoardVictory) return;
+  lastBoardVictory=key; playDiceVictory(x.values.length);
 }
 function setDiceRollSound(on){
   clearInterval(diceSoundTimer); diceSoundTimer=null;
@@ -4607,6 +4626,16 @@ function setBoardDiceSound(on){
   boardSoundOn=on;
   clearInterval(boardSoundTimer); boardSoundTimer=null;
   if(on){ playDiceClick(); boardSoundTimer=setInterval(playDiceClick,115); }
+}
+function setVictoryVars(el,count){
+  const level=Math.min(Math.max(count||1,1),12);
+  el.style.setProperty("--victory-glow",(25+level*3)+"px");
+  el.style.setProperty("--victory-star-size",(23+level*1.4)+"px");
+  el.style.setProperty("--victory-letter",(.14+level*.012)+"em");
+  el.style.setProperty("--victory-face-glow",(10+level*1.8)+"px");
+  el.style.setProperty("--victory-board-glow",(40+level*5)+"px");
+  el.style.setProperty("--victory-board-star",(34+level*2.2)+"px");
+  el.style.setProperty("--victory-board-letter",(.36+level*.014)+"em");
 }
 document.addEventListener("pointerdown",function(){ diceAudioContext(); },{once:true,passive:true});
 function snapNow(slotIdx, seatNum){
@@ -5242,13 +5271,14 @@ function renderBoard(){
   if(die){
     if(active&&active.dice){
       const x=active.dice, label=x.mode==="blessed"?"축복":x.mode==="cursed"?"저주":"일반";
-      die.hidden=false; die.className="board-dice on "+(x.mode||"normal")+(x.shattered?" shattered":"");
+      die.hidden=false; die.className="board-dice on "+(x.mode||"normal")+(x.shattered?" shattered":"")+(x.celebrating?" celebrating":"");
       const threshold=x.mode==="blessed"?4:x.mode==="cursed"?6:5;
       const count=Math.max(1,x.values.length);
       const cols=Math.min(count,Math.max(1,Math.ceil(Math.sqrt(count*innerWidth/Math.max(180,innerHeight*.55)))));
       die.style.setProperty("--bd-cols",cols);
       die.style.setProperty("--bd-rows",Math.ceil(count/cols));
-      die.innerHTML='<div class="bd-kicker">'+label+' · '+threshold+' 이상 성공</div><div class="bd-name">'+active.name+' · '+x.label+'</div><div class="bd-faces'+(x.rolling?' rolling':'')+'">'+x.values.map(function(v){ const success=!x.rolling&&v>=threshold; return '<span class="bd-face'+(success?' success':'')+'" aria-label="'+v+(success?' 성공':' 실패')+'">'+v+(success?'<span class="bd-check" aria-hidden="true">✓</span>':'')+'</span>'; }).join("")+'</div><div class="bd-result'+(x.shattered?' failure':'')+'" aria-live="polite">'+(x.rolling?'<strong>굴리는 중…</strong>':x.shattered?'<strong>완전 실패</strong><small>0 성공</small>':'<strong>'+x.successes+'</strong> 성공'+(x.sixExtra?' <small>(6보정 +'+x.sixExtra+')</small>':''))+'</div>';
+      setVictoryVars(die,count);
+      die.innerHTML='<div class="bd-kicker">'+label+' · '+threshold+' 이상 성공</div><div class="bd-name">'+active.name+' · '+x.label+'</div><div class="bd-faces'+(x.rolling?' rolling':'')+'">'+x.values.map(function(v){ const success=!x.rolling&&v>=threshold; return '<span class="bd-face'+(success?' success':'')+'" aria-label="'+v+(success?' 성공':' 실패')+'">'+v+(success?'<span class="bd-check" aria-hidden="true">✓</span>':'')+'</span>'; }).join("")+'</div><div class="bd-result'+(x.shattered?' failure':'')+(x.celebrating?' victory':'')+'" aria-live="polite">'+(x.rolling?'<strong>굴리는 중…</strong>':x.shattered?'<strong>완전 실패</strong><small>0 성공</small>':x.celebrating?'<strong>대성공</strong><small>'+x.values.length+'개 모두 성공</small>':'<strong>'+x.successes+'</strong> 성공'+(x.sixExtra?' <small>(6보정 +'+x.sixExtra+')</small>':''))+'</div>';
       const base=Number.isFinite(x.baseCount)?x.baseCount:x.values.length;
       const modifier=Number.isFinite(x.modifier)?x.modifier:0;
       const total=Number.isFinite(x.count)?x.count:x.values.length;
@@ -5258,7 +5288,8 @@ function renderBoard(){
       die.appendChild(breakdown);
       setBoardDiceSound(!!(x.rolling&&x.sound));
       playBoardFailure(x);
-    } else { lastBoardFailure=""; setBoardDiceSound(false); die.hidden=true; die.className="board-dice"; die.innerHTML=""; }
+      playBoardVictory(x);
+    } else { lastBoardFailure=""; lastBoardVictory=""; setBoardDiceSound(false); die.hidden=true; die.className="board-dice"; die.innerHTML=""; }
   }
   g.querySelectorAll("img[data-bimg]").forEach(function(im){
     const inv=INV.find(function(x){return x.id===im.getAttribute("data-bimg");});
@@ -5792,7 +5823,6 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   const motionBtn=document.getElementById("motionPermission");
   let dice={sid:"",part:"",label:"",count:0,values:[],selected:new Set(),rolling:false,pendingAction:""};
   let rollTimer=null, lastShake=0, lastMotion=0, motionSeen=false, motionPromptTimer=null;
-  const motionPermissionKey="eh-motion-permission-granted";
 
   const historyPanel=document.getElementById("diceHistory");
   const historyKey="eh-dice-history-v1";
@@ -5876,7 +5906,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   }
   function publishDiceOverlay(){
     if(modal.hidden||!dice.values.length) diceOverlay=null;
-    else { const q=rqOf(), sixExtra=q.sixBonus?dice.values.filter(function(v){return v===6;}).length:0; diceOverlay={label:dice.label,baseCount:dice.baseCount,modifier:dice.count-dice.baseCount,count:dice.count,values:dice.values.slice(),successes:successTotal(),sixExtra:sixExtra,mode:q.mode,rolling:dice.rolling,shattered:!!dice.shattered}; }
+    else { const q=rqOf(), sixExtra=q.sixBonus?dice.values.filter(function(v){return v===6;}).length:0; diceOverlay={label:dice.label,baseCount:dice.baseCount,modifier:dice.count-dice.baseCount,count:dice.count,values:dice.values.slice(),successes:successTotal(),sixExtra:sixExtra,mode:q.mode,rolling:dice.rolling,shattered:!!dice.shattered,celebrating:!!dice.celebrating}; }
     publishSnap();
   }
   function actionInfo(type){
@@ -5895,13 +5925,17 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     }).join("");
     grid.classList.toggle("rolling",dice.rolling);
     grid.classList.toggle("shattered",!!dice.shattered);
+    grid.classList.toggle("celebrating",!!dice.celebrating);
     modal.classList.toggle("dice-shattered",!!dice.shattered);
+    modal.classList.toggle("dice-celebrating",!!dice.celebrating);
+    setVictoryVars(modal,dice.values.length);
     document.getElementById("diceReady").hidden=!!dice.values.length;
     if(!dice.values.length){ result.textContent=dice.count?"칸을 누르거나 휴대폰을 흔들어 굴리세요":"굴릴 주사위가 없습니다"; return; }
     if(dice.rolling){ result.textContent="주사위가 구르는 중…"; return; }
     if(dice.pendingAction){ result.textContent=actionInfo(dice.pendingAction).label+"을 적용할 주사위를 선택하세요. 같은 버튼을 다시 누르거나 Esc로 취소합니다."; return; }
     const successes=successTotal(), q=rqOf();
     if(dice.shattered){ result.innerHTML='<strong class="dice-failure">완전 실패</strong><span>0 성공 · '+dice.values.join(" · ")+'</span>'; return; }
+    if(dice.celebrating){ result.innerHTML='<strong class="dice-victory">대성공</strong><span>'+dice.values.length+'개 모두 성공 · '+dice.values.join(" · ")+'</span>'; return; }
     result.innerHTML='<strong>'+successes+' 성공</strong>'+(q.sixBonus&&dice.values.filter(function(v){return v===6;}).length?' (6보정 +'+dice.values.filter(function(v){return v===6;}).length+')':'')+' · '+dice.values.join(" · ");
   }
   function actionButton(type,label,count){
@@ -5935,7 +5969,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     if(dice.rolling||!dice.count) return;
     if(!dice.values.length) dice.values=Array.from({length:dice.count},randomDie);
     const targets=indices&&indices.length?indices:Array.from({length:dice.count},function(_,i){return i;});
-    dice.rolling=true; dice.shattered=false; dice.selected.clear(); paintDice(); paintActions();
+    dice.rolling=true; dice.shattered=false; dice.celebrating=false; dice.selected.clear(); paintDice(); paintActions();
     setDiceRollSound(true);
     if(navigator.vibrate) navigator.vibrate(10);
     let ticks=0;
@@ -5943,7 +5977,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     rollTimer=setInterval(function(){
       targets.forEach(function(i){ dice.values[i]=randomDie(); });
       paintDice(); publishDiceOverlay();
-      if(++ticks>=15){ clearInterval(rollTimer); rollTimer=null; dice.rolling=false; dice.shattered=successTotal()===0; setDiceRollSound(false); if(dice.shattered){ if(diceSoundEnabled()) playDiceFailure(); if(navigator.vibrate) navigator.vibrate([24,22,96]); } else if(navigator.vibrate) navigator.vibrate(18); paintDice(); paintActions(); publishDiceOverlay(); recordDice(reason||"첫 굴림",indices); }
+      if(++ticks>=15){ clearInterval(rollTimer); rollTimer=null; dice.rolling=false; dice.shattered=successTotal()===0; dice.celebrating=!dice.shattered&&dice.values.length>0&&dice.values.every(isSuccess); setDiceRollSound(false); if(dice.shattered){ if(diceSoundEnabled()) playDiceFailure(); if(navigator.vibrate) navigator.vibrate([24,22,96]); } else if(dice.celebrating){ if(diceSoundEnabled()) playDiceVictory(dice.values.length); if(navigator.vibrate) navigator.vibrate([16,35,16]); } else if(navigator.vibrate) navigator.vibrate(18); paintDice(); paintActions(); publishDiceOverlay(); recordDice(reason||"첫 굴림",indices); }
     },85);
   }
   function useAction(type){
@@ -5972,10 +6006,10 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     modal.hidden=false; document.body.classList.add("dice-open"); paintCountAdjust(); paintDice(); paintActions();
     clearTimeout(motionPromptTimer);
     motionBtn.hidden=true;
-    if(window.DeviceMotionEvent&&typeof DeviceMotionEvent.requestPermission==="function"&&!localStorage.getItem(motionPermissionKey)){
+    if(window.DeviceMotionEvent&&typeof DeviceMotionEvent.requestPermission==="function"){
       motionPromptTimer=setTimeout(function(){
         if(!modal.hidden&&!motionSeen) motionBtn.hidden=false;
-      },700);
+      },900);
     }
   }
   function closeDice(){
@@ -5996,7 +6030,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
       const action=actionInfo(dice.pendingAction);
       dice.pendingAction=""; dice.selected.clear();
       if(action&&consume(action.owner,action.key)){
-        if(action.mode==="plus1"){ dice.values[i]=Math.min(6,dice.values[i]+1); dice.shattered=successTotal()===0; recordDice(action.label,[i]); }
+        if(action.mode==="plus1"){ const wasCelebrating=!!dice.celebrating; dice.values[i]=Math.min(6,dice.values[i]+1); dice.shattered=successTotal()===0; dice.celebrating=!dice.shattered&&dice.values.length>0&&dice.values.every(isSuccess); if(dice.celebrating&&!wasCelebrating){ if(diceSoundEnabled()) playDiceVictory(dice.values.length); if(navigator.vibrate) navigator.vibrate([16,35,16]); } recordDice(action.label,[i]); }
         else roll([i],action.label);
       }
       if(navigator.vibrate) navigator.vibrate(12);
@@ -6017,12 +6051,11 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     else closeDice();
   });
   motionBtn.onclick=async function(){
-    try{ const ok=await DeviceMotionEvent.requestPermission(); if(ok==="granted"){ localStorage.setItem(motionPermissionKey,"1"); motionSeen=true; motionBtn.hidden=true; result.textContent="흔들기 준비 완료"; } }
+    try{ const ok=await DeviceMotionEvent.requestPermission(); if(ok==="granted"){ motionSeen=true; motionBtn.hidden=true; result.textContent="흔들기 준비 완료"; } }
     catch(e){ result.textContent="이 기기에서는 흔들기 권한을 켤 수 없습니다"; }
   };
   window.addEventListener("devicemotion",function(e){
     motionSeen=true;
-    localStorage.setItem(motionPermissionKey,"1");
     motionBtn.hidden=true;
     if(modal.hidden||!historyPanel.hidden||dice.rolling) return;
     const a=e.acceleration||e.accelerationIncludingGravity; if(!a) return;
@@ -6065,7 +6098,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260914-f";
+const APP_VER="20260914-g";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;

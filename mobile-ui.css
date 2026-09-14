@@ -366,6 +366,31 @@ body.round-blessed .dice-shattered .dice-sheet { border-color:#8f8585 !important
 body.round-cursed .dice-shattered { background:radial-gradient(ellipse at 50% 35%,rgba(159,16,38,.56),rgba(19,0,9,.96) 72%) !important; }
 @keyframes crack-flash { 0% { opacity:0; transform:scale(.82); } 30% { opacity:1; transform:scale(1.04); } 100% { opacity:.42; transform:scale(1); } }
 @keyframes failure-stamp { 0% { opacity:0; transform:scale(1.7); filter:blur(8px); } 55% { opacity:1; transform:scale(.94); filter:none; } 100% { transform:scale(1); } }
+
+/* Every die succeeded: a brief, bright triumph instead of the normal landing. */
+.dice-celebrating { background:radial-gradient(ellipse at 50% 38%,rgba(255,235,169,.38),rgba(23,17,6,.9) 72%) !important; }
+.dice-celebrating .dice-sheet { position:relative; overflow:hidden; border-color:#f6d77a !important; box-shadow:0 0 0 100vmax rgba(255,224,139,.08),0 0 var(--victory-glow) #ffe18a99 !important; }
+.dice-celebrating .dice-sheet::before { content:"✦  ·  ✧  ·  ✦  ·  ✧  ·  ✦"; position:absolute; inset:34% -22%; z-index:2; color:#fff4bd; font-size:var(--victory-star-size); letter-spacing:var(--victory-letter); text-align:center; pointer-events:none; text-shadow:0 0 var(--victory-face-glow) #fff2a8; animation:victory-sparkle .84s ease-out both; }
+.dice-celebrating .dice-sheet > * { position:relative; z-index:1; }
+.dice-grid.celebrating .dice-face { border-color:#f5d56d; color:#71520a; background:radial-gradient(circle at 32% 25%,#fffdf2,#ffe9a3 58%,#d6a639); box-shadow:inset 0 0 0 2px #fff5bb,0 0 var(--victory-face-glow) #ffe581cc; animation:victory-die .58s cubic-bezier(.15,.8,.25,1.25); }
+.dice-grid.celebrating .dice-face:nth-child(2n) { animation-delay:.06s; }
+.dice-grid.celebrating .dice-face:nth-child(3n) { animation-delay:.12s; }
+.dice-result.victory { min-height:51px; padding-top:5px; color:#fff0b0; text-shadow:0 2px 8px #4f3500; }
+.dice-result.victory .dice-victory { display:block; color:#fff3b2; font-size:clamp(28px,8vw,44px); letter-spacing:.1em; animation:victory-stamp .58s cubic-bezier(.15,.8,.25,1.25); }
+.dice-result.victory span { display:block; margin-top:3px; font-size:12px; }
+.board-dice.celebrating { background:radial-gradient(ellipse at 50% 42%,#6e5420 0,#201706 56%,#060505 100%) !important; box-shadow:inset 0 0 110px #000,0 0 var(--victory-board-glow) #ffe387aa; }
+.board-dice.celebrating::after { content:"✦  ✧  ✦  ✧  ✦"; position:absolute; inset:35% 0 auto; color:#fff2ae; font-size:var(--victory-board-star); letter-spacing:var(--victory-board-letter); text-align:center; pointer-events:none; text-shadow:0 0 var(--victory-face-glow) #fff0a0; animation:victory-sparkle .9s ease-out both; }
+.board-dice.celebrating .bd-face.success { border-color:#ffe275; box-shadow:inset 0 0 0 3px #fff6bf,0 0 25px #ffe481cc; animation:victory-die .62s cubic-bezier(.15,.8,.25,1.25); }
+.board-dice.celebrating .bd-result.victory strong { color:#fff2ad; font-size:clamp(48px,9vw,104px); letter-spacing:.1em; text-shadow:0 4px 17px #573b00; }
+.board-dice.celebrating .bd-result.victory small { display:block; margin-top:8px; color:#fff4c6; }
+body.round-blessed .dice-celebrating { background:radial-gradient(ellipse at 50% 38%,rgba(255,255,255,.72),rgba(198,176,166,.86) 72%) !important; }
+body.round-blessed .dice-celebrating .dice-sheet { border-color:#f8f8f2 !important; box-shadow:0 0 42px #ffffedcc !important; }
+body.round-cursed .dice-celebrating { background:radial-gradient(ellipse at 50% 38%,rgba(177,112,243,.46),rgba(29,5,51,.94) 72%) !important; }
+body.round-cursed .dice-celebrating .dice-sheet { border-color:#bd78ee !important; box-shadow:0 0 42px #b367e1bb !important; }
+body.round-cursed .dice-celebrating .dice-face { border-color:#c682f2; background:radial-gradient(circle at 32% 25%,#f6dfff,#bd79df 58%,#5c2678); color:#311143; box-shadow:inset 0 0 0 2px #f5dcff,0 0 20px #c77bf0cc; }
+@keyframes victory-die { 0% { transform:scale(.7) rotate(-12deg); filter:brightness(.6); } 55% { transform:scale(1.14) rotate(5deg); filter:brightness(1.35); } 100% { transform:scale(1) rotate(0); } }
+@keyframes victory-sparkle { 0% { opacity:0; transform:translateY(18px) scale(.6); } 40% { opacity:1; transform:translateY(-8px) scale(1.12); } 100% { opacity:.15; transform:translateY(-30px) scale(1.25); } }
+@keyframes victory-stamp { 0% { opacity:0; transform:scale(.45); filter:blur(6px); } 60% { opacity:1; transform:scale(1.12); filter:none; } 100% { transform:scale(1); } }
 @keyframes dice-tray-shatter { 0%,100% { transform:translateX(0); } 18% { transform:translateX(-11px) rotate(-.4deg); } 38% { transform:translateX(10px) rotate(.35deg); } 58% { transform:translateX(-6px); } }
 @keyframes dice-face-shatter { 0% { transform:scale(1); filter:none; } 35% { transform:translate(-4px,3px) rotate(-7deg) scale(.94); filter:brightness(.6); } 65% { transform:translate(5px,-3px) rotate(8deg) scale(.91); } 100% { transform:scale(1); filter:none; } }
 @keyframes board-shatter { 0%,100% { transform:translateX(0); } 20% { transform:translateX(-18px); } 42% { transform:translateX(15px); } 65% { transform:translateX(-8px); } }
