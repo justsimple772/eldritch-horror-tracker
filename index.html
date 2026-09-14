@@ -2256,16 +2256,28 @@
     font-size:12px; color:var(--gold2); line-height:1.25;
   }
   .mythpop {
-    position:absolute; inset:40px 12px 12px; z-index:8;
-    background:#16100E; border:1px solid var(--gold); border-radius:8px;
-    padding:10px; overflow:auto;
+    position:absolute; inset:40px 10px 10px; z-index:8;
+    background:linear-gradient(145deg,#241914,#100d0c 72%); border:1px solid #b58a43; border-radius:12px;
+    padding:12px; overflow:auto; box-shadow:0 18px 44px rgba(0,0,0,.52);
   }
-  .mythpop h4 { margin:0 0 8px; color:var(--gold2); }
-  .mythpop .mback { margin-bottom:8px; }
+  .mythpop-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 0 10px; }
+  .mythpop h4 { margin:0; color:#ffe0a0; font-size:16px; letter-spacing:.02em; }
+  .mythpop .mback { margin:0 0 10px; min-height:40px; padding:7px 12px; }
+  .mythpop .myth-close { min-width:48px; min-height:40px; padding:7px 12px; color:#fff3d9; }
+  .mythpop .myth-hint { margin:-3px 0 11px; color:#d6bf9c; font-size:12px; line-height:1.35; }
+  .myth-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
   .mythpop button.set, .mythpop button.ao, .mythpop button.my {
-    display:block; width:100%; text-align:left; margin:0 0 6px;
-    padding:8px 10px; border:1px solid var(--line); background:#221A16;
-    color:var(--cream); border-radius:6px;
+    display:flex; flex-direction:column; justify-content:center; gap:3px; width:100%; min-height:62px;
+    text-align:left; margin:0; padding:10px 11px; border:1px solid #62492c;
+    background:linear-gradient(145deg,#33251c,#201713); color:#fff4dc; border-radius:9px;
+    box-shadow:inset 0 1px 0 rgba(255,232,178,.1); touch-action:manipulation;
+  }
+  .mythpop button.set:active, .mythpop button.ao:active, .mythpop button.my:active { transform:translateY(1px); background:#49331f; }
+  .mythpop button.my { grid-column:1/-1; min-height:58px; }
+  .mythpop .myth-kicker { color:#d9b66d; font-size:11px; font-weight:800; letter-spacing:.04em; }
+  .mythpop .myth-name { font-size:15px; font-weight:800; line-height:1.2; }
+  .mythpop .myth-summary { color:#e5d7be; font-size:12px; font-weight:500; line-height:1.34; }
+  @media (min-width:680px) { .myth-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } .mythpop button.my { grid-column:auto; } }
   }
 
 
@@ -3040,7 +3052,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260914-j">
+<link rel="stylesheet" href="mobile-ui.css?v=20260914-k">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -3138,6 +3150,7 @@
   <div class="mythos" id="mythosMsg">신화 단계 시행 후 새로운 대표 조사자를 정해주십시오.<button type="button" class="mythos-x" data-mythos-x aria-label="닫고 이전 조사자">×</button></div>
   <div class="bgrid" id="boardGrid"></div>
   <div class="board-dice" id="boardDiceOverlay" hidden></div>
+  <button type="button" class="bd-reopen" id="boardDiceReopen" hidden>닫은 결과 보기</button>
 </div>
 </div>
 
@@ -4571,6 +4584,8 @@ function parseSeats(raw){
   return out.length?out:[1];
 }
 let diceOverlay=null;
+const boardDiceDismissed=new Set();
+let boardDiceCurrent="";
 const DICE_SOUND_KEY="eh-dice-sound";
 let diceAudio=null, diceSoundTimer=null, boardSoundTimer=null, boardSoundOn=false, lastBoardFailure="", lastBoardVictory="";
 function diceSoundEnabled(){ return localStorage.getItem(DICE_SOUND_KEY)!=="off"; }
@@ -5070,17 +5085,17 @@ const MYTH={
       {t:"[최후] 세상은 집어 삼켜지고 말았습니다!", s:"아자토스가 깨어나면 즉시 패배합니다. 최후 해결 방법이 없습니다."}
     ]},
     {id:"cthulhu", kr:"크툴루", ms:[
-      {t:"떠오른 르릴레", s:"르릴레 특수 조우를 조사자 수만큼 해결하면 이 미스터리 해결."},
+      {t:"르뤼에의 부상", s:"르뤼에 특수 조우를 조사자 수만큼 해결하면 이 미스터리 해결."},
       {t:"심해인들의 습격!", s:"바다 칸에서 단서 1 소비+의지 성공 시 엘드리치 토큰 1. 조사자 수만큼이면 해결."},
-      {t:"별들이 들어맞다!", s:"조사 조우로 단서를 이 카드에 조사자 수만큼 놓으면 해결."},
-      {t:"별을 주시하다", s:"크틸라 에픽을 출현시킵니다. 처치하면 해결."},
+      {t:"별들이 제자리를 찾을 때", s:"조사 조우로 얻은 단서를 이 카드에 조사자 수만큼 놓으면 해결."},
+      {t:"별을 바라보며", s:"크틸라 에픽 괴물을 출현시킵니다. 처치하면 해결."},
       {t:"심해의 여왕", s:"하이드라 에픽을 출현시킵니다. 처치하면 해결."},
-      {t:"위협하는 바다", s:"바다/해안 칸에 엘드리치 토큰을 조사자 수만큼 놓으면 해결."},
+      {t:"위협적인 바다", s:"바다 또는 해안 칸에 엘드리치 토큰을 조사자 수만큼 놓으면 해결."},
       {t:"[최후] 바다에서 일어나다", s:"미스터리 3개 해결 후 3번 칸에 크툴루가 출현. 쓰러뜨리면 승리."}
     ]},
     {id:"shub", kr:"슈브 니구라스", ms:[
       {t:"천 자손 사냥", s:"검은 염소의 어린 것 등을 처치할 때마다 이 카드에 토큰. 조사자 수만큼이면 해결."},
-      {t:"만물의 어머니의 본질", s:"조사 조우로 단서를 이 카드에 조사자 수만큼 놓으면 해결."},
+      {t:"만물의 어머니의 본질", s:"조사 조우로 얻은 단서를 이 카드에 조사자 수만큼 놓으면 해결."},
       {t:"야생의 의식", s:"야생 칸에서 단서 1 소비+지식 성공 시 엘드리치 토큰 1. 조사자 수의 절반이면 해결."},
       {t:"검은 염소의 자손", s:"검은 염소의 자손 에픽을 출현시킵니다. 처치하면 해결."},
       {t:"검은 염소의 모독", s:"슈브-니구라스 에픽(또는 지정 에픽)을 처치하면 해결."},
@@ -5090,7 +5105,7 @@ const MYTH={
     {id:"yog", kr:"요그 소토스", ms:[
       {t:"비전 이해", s:"마법 카드 1과 단서 1을 소비하고 지식 테스트 성공 시 이 카드에 단서. 조사자 수만큼이면 해결."},
       {t:"요그-소토스의 자손", s:"던위치 호러 에픽을 출현시킵니다. 처치하면 해결."},
-      {t:"저편에서 온 자", s:"조사 조우로 단서를 이 카드에 조사자 수만큼 놓으면 해결."},
+      {t:"저편에서 온 존재", s:"조사 조우로 얻은 단서를 이 카드에 조사자 수만큼 놓으면 해결."},
       {t:"옛것이 뚫고 나온 곳", s:"문이 있는 칸에서 단서 1 소비+지식-1 성공 시 엘드리치 토큰 1. 조사자 수의 절반이면 해결."},
       {t:"돌로 된 원진", s:"지정 장소들에 엘드리치 토큰을 조사자 수만큼 놓으면 해결."},
       {t:"세계 사이의 공허", s:"공허 특수 조우를 조사자 수만큼 해결하면 이 미스터리 해결."},
@@ -5232,23 +5247,27 @@ function openMythPop(view, key, aoId){
   const p=document.getElementById("mythPop");
   if(!p) return;
   p.hidden=false;
-  let html='<button type="button" class="ghost mback" id="mythClose">닫기</button>';
+  let html='';
   if(!view || view==="set"){
-    html+="<h4>확장 선택</h4>";
+    html+='<div class="mythpop-head"><h4>미스터리 선택</h4><button type="button" class="ghost myth-close" id="mythClose">닫기</button></div><p class="myth-hint">사용 중인 확장을 선택하세요.</p><div class="myth-grid">';
     Object.keys(MYTH).forEach(function(k){
-      html+='<button type="button" class="set" data-ms="'+k+'">'+MYTH[k].kr+"</button>";
+      const set=MYTH[k];
+      html+='<button type="button" class="set" data-ms="'+k+'"><span class="myth-kicker">확장</span><span class="myth-name">'+set.kr+'</span><span class="myth-summary">고대의 존재 '+set.ao.length+'종</span></button>';
     });
+    html+='</div>';
   } else if(view==="ao"){
-    html+='<button type="button" class="ghost mback" data-mb="set">← 확장</button><h4>'+MYTH[key].kr+"</h4>";
+    html+='<button type="button" class="ghost mback" data-mb="set">← 확장 목록</button><div class="mythpop-head"><h4>'+MYTH[key].kr+'</h4><button type="button" class="ghost myth-close" id="mythClose">닫기</button></div><p class="myth-hint">상대할 고대의 존재를 선택하세요.</p><div class="myth-grid">';
     MYTH[key].ao.forEach(function(a){
-      html+='<button type="button" class="ao" data-ms="'+key+'" data-ao="'+a.id+'">'+a.kr+"</button>";
+      html+='<button type="button" class="ao" data-ms="'+key+'" data-ao="'+a.id+'"><span class="myth-kicker">고대의 존재</span><span class="myth-name">'+a.kr+'</span><span class="myth-summary">미스터리 '+a.ms.length+'장</span></button>';
     });
+    html+='</div>';
   } else {
     const set=MYTH[key]; const ao=set.ao.find(function(a){return a.id===aoId;});
-    html+='<button type="button" class="ghost mback" data-mb="ao" data-ms="'+key+'">← 고대의 존재</button><h4>'+ao.kr+" 미스터리</h4>";
+    html+='<button type="button" class="ghost mback" data-mb="ao" data-ms="'+key+'">← 고대의 존재 목록</button><div class="mythpop-head"><h4>'+ao.kr+' 미스터리</h4><button type="button" class="ghost myth-close" id="mythClose">닫기</button></div><p class="myth-hint">제목만 보고 카드를 선택하세요. 요구 조건은 선택 후 전광판에 표시됩니다.</p><div class="myth-grid">';
     ao.ms.forEach(function(m,i){
-      html+='<button type="button" class="my" data-ms="'+key+'" data-ao="'+aoId+'" data-mi="'+i+'">'+m.t+"</button>";
+      html+='<button type="button" class="my" data-ms="'+key+'" data-ao="'+aoId+'" data-mi="'+i+'"><span class="myth-kicker">미스터리 '+(i+1)+'</span><span class="myth-name">'+m.t+'</span></button>';
     });
+    html+='</div>';
   }
   p.innerHTML=html;
 }
@@ -5301,7 +5320,24 @@ function renderBoard(){
   }
   g.innerHTML=html;
   const die=document.getElementById("boardDiceOverlay");
-  const active=Object.keys(net.board).map(function(k){ return net.board[k]&&net.board[k].dice?net.board[k]:null; }).find(Boolean);
+  const reopen=document.getElementById("boardDiceReopen");
+  const diceEntries=Object.keys(net.board).map(function(k){
+    const data=net.board[k]; if(!data||!data.dice) return null;
+    const id=data.dice.rollId||((data.name||"조사자")+":"+(data.dice.label||"주사위"));
+    return {key:String(k)+":"+id,data:data,openedAt:data.dice.openedAt||data.t||0};
+  }).filter(Boolean);
+  const available=new Set(diceEntries.map(function(entry){return entry.key;}));
+  Array.from(boardDiceDismissed).forEach(function(key){ if(!available.has(key)) boardDiceDismissed.delete(key); });
+  let activeEntry=diceEntries.find(function(entry){ return entry.key===boardDiceCurrent&&!boardDiceDismissed.has(entry.key); });
+  if(!activeEntry) activeEntry=diceEntries.filter(function(entry){return !boardDiceDismissed.has(entry.key);}).sort(function(a,b){return a.openedAt-b.openedAt;})[0]||null;
+  boardDiceCurrent=activeEntry?activeEntry.key:"";
+  const active=activeEntry?activeEntry.data:null;
+  const dismissedEntries=Array.from(boardDiceDismissed).filter(function(key){return available.has(key);});
+  if(reopen){
+    reopen.hidden=!dismissedEntries.length;
+    reopen.textContent="닫은 결과 "+dismissedEntries.length+"개 보기";
+    reopen.onclick=function(){ const key=dismissedEntries[dismissedEntries.length-1]; boardDiceDismissed.delete(key); boardDiceCurrent=key; renderBoard(); };
+  }
   if(die){
     if(active&&active.dice){
       const x=active.dice, label=x.mode==="blessed"?"축복":x.mode==="cursed"?"저주":"일반";
@@ -5314,7 +5350,7 @@ function renderBoard(){
       setVictoryVars(die,count);
       const perfectTitle=x.perfectLevel===1?"완벽한 성공":x.perfectLevel===2?"대성공":"압도적 대성공";
       const boardNarrative=x.narrative&&x.narrative.text?'<div class="bd-narrative '+(x.narrative.tone||"")+'">'+String(x.narrative.text).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];})+'</div>':'';
-      die.innerHTML='<div class="bd-kicker">'+label+' · '+threshold+' 이상 성공</div><div class="bd-name">'+active.name+' · '+x.label+'</div>'+boardNarrative+'<div class="bd-faces'+(x.rolling?' rolling':'')+'">'+x.values.map(function(v){ const success=!x.rolling&&v>=threshold; return '<span class="bd-face'+(success?' success':'')+'" aria-label="'+v+(success?' 성공':' 실패')+'">'+v+(success?'<span class="bd-check" aria-hidden="true">✓</span>':'')+'</span>'; }).join("")+'</div><div class="bd-result'+(x.shattered?' failure':'')+(x.celebrating?' victory':'')+'" aria-live="polite">'+(x.rolling?'<strong>굴리는 중…</strong>':x.shattered?'<strong>완전 실패</strong><small>0 성공</small>':x.celebrating?'<strong>'+perfectTitle+'</strong>':'<strong>'+x.successes+'</strong> 성공'+(x.sixExtra?' <small>(6보정 +'+x.sixExtra+')</small>':''))+'</div>';
+      die.innerHTML='<button type="button" class="bd-close" aria-label="전광판 주사위 결과 닫기">×</button><div class="bd-kicker">'+label+' · '+threshold+' 이상 성공</div><div class="bd-name">'+active.name+' · '+x.label+'</div>'+boardNarrative+'<div class="bd-faces'+(x.rolling?' rolling':'')+'">'+x.values.map(function(v){ const success=!x.rolling&&v>=threshold; return '<span class="bd-face'+(success?' success':'')+'" aria-label="'+v+(success?' 성공':' 실패')+'">'+v+(success?'<span class="bd-check" aria-hidden="true">✓</span>':'')+'</span>'; }).join("")+'</div><div class="bd-result'+(x.shattered?' failure':'')+(x.celebrating?' victory':'')+'" aria-live="polite">'+(x.rolling?'<strong>굴리는 중…</strong>':x.shattered?'<strong>완전 실패</strong><small>0 성공</small>':x.celebrating?'<strong>'+perfectTitle+'</strong>':'<strong>'+x.successes+'</strong> 성공'+(x.sixExtra?' <small>(6보정 +'+x.sixExtra+')</small>':''))+'</div>';
       const base=Number.isFinite(x.baseCount)?x.baseCount:x.values.length;
       const modifier=Number.isFinite(x.modifier)?x.modifier:0;
       const total=Number.isFinite(x.count)?x.count:x.values.length;
@@ -5322,6 +5358,7 @@ function renderBoard(){
       breakdown.className="bd-breakdown";
       breakdown.textContent="기술치 "+base+" · 판정 보정 "+(modifier>0?"+":"")+modifier+" · 주사위 "+total+"개";
       die.appendChild(breakdown);
+      die.querySelector(".bd-close").onclick=function(){ boardDiceDismissed.add(boardDiceCurrent); boardDiceCurrent=""; renderBoard(); };
       setBoardDiceSound(!!(x.rolling&&x.sound));
       playBoardFailure(x);
       playBoardVictory(x);
@@ -5974,7 +6011,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   }
   function publishDiceOverlay(){
     if(modal.hidden||!dice.values.length) diceOverlay=null;
-    else { const q=rqOf(), sixExtra=q.sixBonus?dice.values.filter(function(v){return v===6;}).length:0; diceOverlay={label:dice.label,baseCount:dice.baseCount,modifier:dice.count-dice.baseCount,count:dice.count,values:dice.values.slice(),successes:successTotal(),sixExtra:sixExtra,mode:q.mode,rolling:dice.rolling,shattered:!!dice.shattered,celebrating:!!dice.celebrating,perfectLevel:dice.perfectLevel||0,narrative:narrativeData()}; }
+    else { const q=rqOf(), sixExtra=q.sixBonus?dice.values.filter(function(v){return v===6;}).length:0; diceOverlay={rollId:dice.rollId,openedAt:dice.openedAt,label:dice.label,baseCount:dice.baseCount,modifier:dice.count-dice.baseCount,count:dice.count,values:dice.values.slice(),successes:successTotal(),sixExtra:sixExtra,mode:q.mode,rolling:dice.rolling,shattered:!!dice.shattered,celebrating:!!dice.celebrating,perfectLevel:dice.perfectLevel||0,narrative:narrativeData()}; }
     publishSnap();
   }
   function actionInfo(type){
@@ -6069,7 +6106,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     if(selection) selection.removeAllRanges();
     const ctx=contextFor(sid,part), slot=state(), sk=slot.skills[sid];
     if(rqOf().ring){ const ring=ensureFlag(slot,"ring"); ring.n=1; ring.used=[false]; save(); }
-    dice={sid:sid,part:part,label:ctx.label,count:ctx.count,baseCount:ctx.count,values:[],selected:new Set(),rolling:false,pendingAction:""};
+    dice={sid:sid,part:part,label:ctx.label,count:ctx.count,baseCount:ctx.count,rollId:Date.now().toString(36)+Math.random().toString(36).slice(2,7),openedAt:Date.now(),values:[],selected:new Set(),rolling:false,pendingAction:""};
     document.getElementById("diceSummary").innerHTML=
       '<span class="dice-chip">현재 주사위 <strong id="diceCurrent">'+ctx.count+'</strong></span>'+
       '<span class="dice-chip">추가 주사위 <strong>'+ctx.added+'</strong></span>'+
@@ -6170,7 +6207,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260914-j";
+const APP_VER="20260914-k";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;
@@ -6233,3 +6270,4 @@ async function applyAppUpdate(){
 </div>
 </body>
 </html>
+
