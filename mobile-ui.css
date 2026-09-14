@@ -546,15 +546,30 @@ body.mobile-ui.tall #stage .skills {
 body.mobile-ui.tall #stage .skill:last-child {
   margin-bottom:0 !important;
 }
+body.mobile-ui.tall #stage .skill:has(.flags:not(:empty)) {
+  /* Header + special-action row + two vertically stacked +/- controls. */
+  min-height:max(var(--sk-h,70px), calc(var(--sk-btn,22px) * 2 + 56px)) !important;
+}
 
 /* A special-action row takes space from its own card.  Fit the +/- controls
    to the remaining coloured cell so they never spill below that cell. */
+body.mobile-ui.tall #stage .cell.formula-cell,
+body.mobile-ui.tall #stage .cell.extra-cell {
+  height:100% !important;
+  min-height:0 !important;
+}
 body.mobile-ui.tall #stage .cell.formula-cell .stepper.formula {
   display:grid !important;
   height:100% !important;
   min-height:0 !important;
-  --fit-step: min(var(--sk-btn,34px), calc((100% - 2px) / 2));
+  --fit-step:var(--sk-btn,34px);
   grid-template-columns:var(--fit-step) minmax(0,1fr) var(--fit-step) !important;
+  grid-template-rows:var(--fit-step) var(--fit-step) !important;
+  grid-template-areas:"impUp num gearUp" "impDn num gearDn" !important;
+  gap:2px 4px !important;
+}
+body.mobile-ui.tall #stage .cell.formula-cell .stepper.formula .fcol {
+  display:contents !important;
 }
 body.mobile-ui.tall #stage .cell.formula-cell .stepper.formula button {
   width:var(--fit-step) !important;
@@ -567,7 +582,7 @@ body.mobile-ui.tall #stage .cell.formula-cell .stepper.formula button {
 body.mobile-ui.tall #stage .cell.extra-cell .stepper.extra {
   height:100% !important;
   min-height:0 !important;
-  --fit-step: min(var(--sk-btn,34px), calc(100% - 2px));
+  --fit-step:var(--sk-btn,34px);
   grid-template-columns:var(--fit-step) minmax(0,1fr) var(--fit-step) !important;
 }
 body.mobile-ui.tall #stage .cell.extra-cell .stepper.extra button {
@@ -577,4 +592,103 @@ body.mobile-ui.tall #stage .cell.extra-cell .stepper.extra button {
   height:var(--fit-step) !important;
   min-height:var(--fit-step) !important;
   max-height:var(--fit-step) !important;
+}
+
+/* Keep every calculation component and its own controls in one colour family. */
+body.mobile-ui #stage {
+  --calc-base:#C8D6B0;
+  --calc-improve:#E8C86A;
+  --calc-gear:#8EC8E8;
+  --calc-success:#E07A5F;
+  --calc-total:#FFF2D7;
+}
+body.mobile-ui #stage .formula-cell .tag span:nth-child(1),
+body.mobile-ui #stage .n.form .a,
+body.mobile-ui #stage .n.extra2 .ea { color:var(--calc-base) !important; }
+body.mobile-ui #stage .formula-cell .tag span:nth-child(2),
+body.mobile-ui #stage .n.form .b,
+body.mobile-ui #stage .n.extra2 .eb { color:var(--calc-improve) !important; }
+body.mobile-ui #stage .formula-cell .tag span:nth-child(3),
+body.mobile-ui #stage .n.form .c { color:var(--calc-gear) !important; }
+body.mobile-ui #stage .n.form .d,
+body.mobile-ui #stage .n.extra2 .ec { color:var(--calc-success) !important; }
+body.mobile-ui #stage .n.form .tot,
+body.mobile-ui #stage .n.extra2 .big { color:var(--calc-total) !important; }
+body.mobile-ui #stage .stepper.formula .fcol.imp button.imp,
+body.mobile-ui #stage .cell.extra-cell button[data-act="minus"],
+body.mobile-ui #stage .cell.extra-cell button[data-act="plus"] {
+  color:var(--calc-improve) !important;
+  border-color:var(--calc-improve) !important;
+  background:#E8C86A24 !important;
+}
+body.mobile-ui #stage .stepper.formula .fcol.gear button.gear {
+  color:var(--calc-gear) !important;
+  border-color:var(--calc-gear) !important;
+  background:#8EC8E824 !important;
+}
+body.mobile-ui #stage .flag[data-flag="success"] .ft {
+  color:var(--calc-success) !important;
+  border-color:var(--calc-success) !important;
+  background:#E07A5F18 !important;
+}
+body.mobile-ui #stage .flag[data-flag="success"].en .ft {
+  background:#E07A5F38 !important;
+}
+
+/* Blessed parchment needs darker inks and clearer tinted controls. */
+body.round-blessed.mobile-ui #stage {
+  --calc-base:#405528;
+  --calc-improve:#7C4F00;
+  --calc-gear:#185B78;
+  --calc-success:#963E32;
+  --calc-total:#2F2924;
+}
+body.round-blessed.mobile-ui #stage .formula-cell .tag,
+body.round-blessed.mobile-ui #stage .formula-cell .tag span,
+body.round-blessed.mobile-ui #stage .n.form .a,
+body.round-blessed.mobile-ui #stage .n.form .b,
+body.round-blessed.mobile-ui #stage .n.form .c,
+body.round-blessed.mobile-ui #stage .n.form .d,
+body.round-blessed.mobile-ui #stage .n.extra2 .small,
+body.round-blessed.mobile-ui #stage .n.extra2 .small span {
+  opacity:1 !important;
+  font-weight:800 !important;
+  text-shadow:0 1px 0 #fff8e2;
+}
+body.round-blessed.mobile-ui.tall #stage .n.form .a,
+body.round-blessed.mobile-ui.tall #stage .n.form .b,
+body.round-blessed.mobile-ui.tall #stage .n.form .c,
+body.round-blessed.mobile-ui.tall #stage .n.form .d {
+  font-size:11px !important;
+  line-height:1.15 !important;
+}
+body.round-blessed.mobile-ui.tall #stage .n.extra2 .small,
+body.round-blessed.mobile-ui.tall #stage .n.extra2 .small span {
+  font-size:10px !important;
+  line-height:1.1 !important;
+}
+body.round-blessed.mobile-ui #stage .stepper.formula .fcol.imp button.imp,
+body.round-blessed.mobile-ui #stage .cell.extra-cell button[data-act="minus"],
+body.round-blessed.mobile-ui #stage .cell.extra-cell button[data-act="plus"] {
+  color:#694300 !important;
+  border-color:#805200 !important;
+  background:#F1D89E !important;
+  box-shadow:inset 0 0 0 1px #FFF3CF80;
+  opacity:1 !important;
+}
+body.round-blessed.mobile-ui #stage .stepper.formula .fcol.gear button.gear {
+  color:#124A63 !important;
+  border-color:#1B607D !important;
+  background:#C9E3EB !important;
+  box-shadow:inset 0 0 0 1px #F4FCFF;
+  opacity:1 !important;
+}
+body.round-blessed.mobile-ui #stage .flag[data-flag="success"] .ft {
+  color:#84362D !important;
+  border-color:#9A4438 !important;
+  background:#F0C9BF !important;
+}
+body.round-blessed.mobile-ui #stage .flag[data-flag="success"].en .ft {
+  background:#E9AEA1 !important;
+  box-shadow:inset 0 0 0 1px #FFF0E9;
 }
