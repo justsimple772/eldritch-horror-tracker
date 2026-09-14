@@ -154,7 +154,7 @@ body.round-cursed { --bg:#210b15; --card:#35101e; --gold:#a94a65; --gold2:#f0a0b
 body.round-blessed #stage,body.round-blessed .dice-sheet { box-shadow:0 0 28px rgba(179,224,255,.23); }
 body.round-cursed #stage,body.round-cursed .dice-sheet { box-shadow:0 0 28px rgba(185,39,79,.25); }
 .round-mode { padding:2px 5px; border:1px solid var(--gold); border-radius:5px; color:var(--gold2); font-size:10px; font-weight:800; white-space:nowrap; }
-.round-state { display:inline-block; margin-left:6px; padding:2px 5px; border-radius:5px; font-size:10px; vertical-align:middle; }
+.round-state { display:inline-block; margin-left:7px; padding:4px 8px; border-radius:7px; font-size:14px; line-height:1.15; font-weight:900; vertical-align:middle; }
 .round-state.blessed { color:#fff; border:1px solid #dcefff; background:#54718f; }.round-state.cursed { color:#ffd9e2; border:1px solid #b75570; background:#58182b; }
 .board-dice { position:fixed; inset:0; z-index:90; display:none; align-items:center; justify-content:center; flex-direction:column; padding:20px; text-align:center; background:rgba(5,8,12,.9); }
 .board-dice.on { display:flex; }.board-dice.blessed { background:rgba(25,45,66,.93); color:#fff; }.board-dice.cursed { background:rgba(53,8,24,.94); color:#ffe3e9; }

@@ -3040,7 +3040,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260914-d">
+<link rel="stylesheet" href="mobile-ui.css?v=20260914-e">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -3927,7 +3927,7 @@ function render(){
   applyRoundTheme();
   const ord=orderOf(party.active);
   document.getElementById("whoName").textContent=inv?(ord+". "+inv.kr):"조사자를 선택하세요";
-  const roundBadge=document.getElementById("roundStateBadge"), roundMode=rqOf().mode;
+  const roundBadge=document.getElementById("roundStateBadge"), rawRoundMode=rqOf().mode, roundMode=["normal","blessed","cursed"].includes(rawRoundMode)?rawRoundMode:"normal";
   roundBadge.hidden=roundMode==="normal";
   roundBadge.textContent=roundMode==="blessed"?"축복":"저주";
   roundBadge.className="round-state "+roundMode;
@@ -6050,7 +6050,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260914-d";
+const APP_VER="20260914-e";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;
