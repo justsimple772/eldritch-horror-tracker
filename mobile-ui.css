@@ -106,6 +106,10 @@ body.mobile-ui #appVerLab { padding:10px 4px 4px !important; border-top:1px soli
 .dice-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .dice-kicker { color:var(--gold2); font-size:11px; letter-spacing:.12em; }
 .dice-head h2 { margin:2px 0 0; color:var(--cream); font-size:23px; line-height:1.1; }
+.dice-narrative { margin:10px 0 2px; padding:9px 11px; border-left:3px solid var(--gold); border-radius:0 9px 9px 0; color:var(--cream); background:rgba(0,0,0,.2); font-size:13px; font-weight:800; line-height:1.45; animation:narrative-enter .38s ease-out; }
+.dice-narrative.fail { border-color:#cf6359; color:#ffd0c9; background:rgba(86,12,23,.28); }
+.dice-narrative.win { border-color:#f4d56d; color:#fff2b8; background:rgba(100,72,5,.24); }
+.dice-narrative.good { border-color:#b7d67d; color:#e6ffc4; background:rgba(41,76,24,.24); }
 .dice-close,.motion-permission,.dice-action {
   border:1px solid var(--line); color:var(--cream); background:var(--btn); font-weight:800;
 }
@@ -138,6 +142,7 @@ body.mobile-ui #appVerLab { padding:10px 4px 4px !important; border-top:1px soli
 .dice-grid:not(.rolling) .dice-face { animation:dice-land .2s cubic-bezier(.2,.8,.35,1.35); }
 @keyframes dice-tumble { from{transform:translateY(-12px) rotate(-13deg) scale(.86)} 55%{transform:translateY(7px) rotate(9deg) scale(1.05)} to{transform:translateY(-4px) rotate(-5deg) scale(.96)} }
 @keyframes dice-land { from{transform:translateY(-9px) rotate(6deg) scale(1.05)} 65%{transform:translateY(3px) rotate(-2deg) scale(.99)} to{transform:translateY(0) rotate(0) scale(1)} }
+@keyframes narrative-enter { from{opacity:0; transform:translateY(-7px); } to{opacity:1; transform:translateY(0); } }
 .dice-result { min-height:31px; padding:10px 2px 6px; text-align:center; color:var(--muted); font-size:13px; font-weight:700; }
 .dice-result strong { color:var(--gold2); font-size:19px; }
 .dice-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
@@ -368,21 +373,28 @@ body.round-cursed .dice-shattered { background:radial-gradient(ellipse at 50% 35
 @keyframes failure-stamp { 0% { opacity:0; transform:scale(1.7); filter:blur(8px); } 55% { opacity:1; transform:scale(.94); filter:none; } 100% { transform:scale(1); } }
 
 /* Every die succeeded: a brief, bright triumph instead of the normal landing. */
-.dice-celebrating { background:radial-gradient(ellipse at 50% 38%,rgba(255,235,169,.38),rgba(23,17,6,.9) 72%) !important; }
-.dice-celebrating .dice-sheet { position:relative; overflow:hidden; border-color:#f6d77a !important; box-shadow:0 0 0 100vmax rgba(255,224,139,.08),0 0 var(--victory-glow) #ffe18a99 !important; }
-.dice-celebrating .dice-sheet::before { content:"✦  ·  ✧  ·  ✦  ·  ✧  ·  ✦"; position:absolute; inset:34% -22%; z-index:2; color:#fff4bd; font-size:var(--victory-star-size); letter-spacing:var(--victory-letter); text-align:center; pointer-events:none; text-shadow:0 0 var(--victory-face-glow) #fff2a8; animation:victory-sparkle .84s ease-out both; }
+.dice-celebrating { background:radial-gradient(ellipse at 50% 38%,rgba(194,215,229,.26),rgba(11,15,24,.94) 72%) !important; }
+.dice-celebrating .dice-sheet { position:relative; overflow:hidden; border-color:#bac7d0 !important; box-shadow:0 0 0 100vmax rgba(197,218,235,.045),0 0 var(--victory-glow) #b8d2e066 !important; }
+.dice-celebrating .dice-sheet::before { content:"✦  ·  ✧  ·  ✦  ·  ✧  ·  ✦"; position:absolute; inset:34% -22%; z-index:2; color:#dcebf0; font-size:var(--victory-star-size); letter-spacing:var(--victory-letter); text-align:center; pointer-events:none; text-shadow:0 0 var(--victory-face-glow) #b7d6e3; animation:victory-sparkle .84s ease-out both; }
 .dice-celebrating .dice-sheet > * { position:relative; z-index:1; }
-.dice-grid.celebrating .dice-face { border-color:#f5d56d; color:#71520a; background:radial-gradient(circle at 32% 25%,#fffdf2,#ffe9a3 58%,#d6a639); box-shadow:inset 0 0 0 2px #fff5bb,0 0 var(--victory-face-glow) #ffe581cc; animation:victory-die .58s cubic-bezier(.15,.8,.25,1.25); }
+.dice-celebrating.perfect-1 .dice-sheet { box-shadow:0 0 0 100vmax rgba(255,224,139,.035),0 0 14px #ffe18a77 !important; }
+.dice-celebrating.perfect-1 .dice-sheet::before { opacity:.3; animation-duration:.42s; }
+.dice-celebrating.perfect-1 .dice-face { animation-duration:.32s; box-shadow:inset 0 0 0 2px #fff5bb,0 0 8px #ffe58199; }
+.dice-celebrating.perfect-2 .dice-sheet::before { opacity:.7; }
+.dice-grid.celebrating .dice-face { border-color:#c4d4dc; color:#304550; background:radial-gradient(circle at 32% 25%,#f9ffff,#cedce0 58%,#8197a1); box-shadow:inset 0 0 0 2px #edf8fa,0 0 var(--victory-face-glow) #b7dce699; animation:victory-die .58s cubic-bezier(.15,.8,.25,1.25); }
 .dice-grid.celebrating .dice-face:nth-child(2n) { animation-delay:.06s; }
 .dice-grid.celebrating .dice-face:nth-child(3n) { animation-delay:.12s; }
-.dice-result.victory { min-height:51px; padding-top:5px; color:#fff0b0; text-shadow:0 2px 8px #4f3500; }
-.dice-result.victory .dice-victory { display:block; color:#fff3b2; font-size:clamp(28px,8vw,44px); letter-spacing:.1em; animation:victory-stamp .58s cubic-bezier(.15,.8,.25,1.25); }
+.dice-result.victory { min-height:51px; padding-top:5px; color:#dcebf0; text-shadow:0 2px 8px #172832; }
+.dice-result.victory .dice-victory { display:block; color:#e9f4f6; font-size:clamp(28px,8vw,44px); letter-spacing:.1em; animation:victory-stamp .58s cubic-bezier(.15,.8,.25,1.25); }
 .dice-result.victory span { display:block; margin-top:3px; font-size:12px; }
-.board-dice.celebrating { background:radial-gradient(ellipse at 50% 42%,#6e5420 0,#201706 56%,#060505 100%) !important; box-shadow:inset 0 0 110px #000,0 0 var(--victory-board-glow) #ffe387aa; }
-.board-dice.celebrating::after { content:"✦  ✧  ✦  ✧  ✦"; position:absolute; inset:35% 0 auto; color:#fff2ae; font-size:var(--victory-board-star); letter-spacing:var(--victory-board-letter); text-align:center; pointer-events:none; text-shadow:0 0 var(--victory-face-glow) #fff0a0; animation:victory-sparkle .9s ease-out both; }
+.board-dice.celebrating { background:radial-gradient(ellipse at 50% 42%,#405662 0,#101922 56%,#040608 100%) !important; box-shadow:inset 0 0 110px #000,0 0 var(--victory-board-glow) #b8dce077; }
+.board-dice.celebrating::after { content:"✦  ✧  ✦  ✧  ✦"; position:absolute; inset:35% 0 auto; color:#dfeef1; font-size:var(--victory-board-star); letter-spacing:var(--victory-board-letter); text-align:center; pointer-events:none; text-shadow:0 0 var(--victory-face-glow) #bddfe7; animation:victory-sparkle .9s ease-out both; }
 .board-dice.celebrating .bd-face.success { border-color:#ffe275; box-shadow:inset 0 0 0 3px #fff6bf,0 0 25px #ffe481cc; animation:victory-die .62s cubic-bezier(.15,.8,.25,1.25); }
-.board-dice.celebrating .bd-result.victory strong { color:#fff2ad; font-size:clamp(48px,9vw,104px); letter-spacing:.1em; text-shadow:0 4px 17px #573b00; }
-.board-dice.celebrating .bd-result.victory small { display:block; margin-top:8px; color:#fff4c6; }
+.board-dice.celebrating .bd-result.victory strong { color:#e5f3f5; font-size:clamp(48px,9vw,104px); letter-spacing:.1em; text-shadow:0 4px 17px #172b35; }
+.board-dice.celebrating .bd-result.victory small { display:block; margin-top:8px; color:#d5e5e8; }
+.board-dice.celebrating.perfect-1 { box-shadow:inset 0 0 110px #000,0 0 22px #ffe38777; }
+.board-dice.celebrating.perfect-1::after { opacity:.35; animation-duration:.42s; }
+.board-dice.celebrating.perfect-1 .bd-face.success { animation-duration:.32s; box-shadow:inset 0 0 0 2px #fff6bf,0 0 10px #ffe48199; }
 body.round-blessed .dice-celebrating { background:radial-gradient(ellipse at 50% 38%,rgba(255,255,255,.72),rgba(198,176,166,.86) 72%) !important; }
 body.round-blessed .dice-celebrating .dice-sheet { border-color:#f8f8f2 !important; box-shadow:0 0 42px #ffffedcc !important; }
 body.round-cursed .dice-celebrating { background:radial-gradient(ellipse at 50% 38%,rgba(177,112,243,.46),rgba(29,5,51,.94) 72%) !important; }

@@ -3040,7 +3040,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260914-g">
+<link rel="stylesheet" href="mobile-ui.css?v=20260914-h">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -3159,6 +3159,7 @@
       <div><div class="dice-kicker">주사위 판정</div><h2 id="diceTitle">기술</h2></div>
       <div class="dice-head-buttons"><button type="button" class="dice-close" id="diceHistoryOpen">기록</button><button type="button" class="dice-close" id="diceClose" aria-label="주사위 창 닫기">닫기</button></div>
     </header>
+    <div class="dice-narrative" id="diceNarrative" hidden aria-live="polite"></div>
     <section id="diceHistory" class="dice-history" role="dialog" aria-modal="true" aria-label="주사위 기록" hidden><header><h2>주사위 기록</h2><button type="button" class="dice-close" id="diceHistoryClose">돌아가기</button></header><p id="diceHistoryNotice">이 기기에 저장된 기록 · 최신순</p><div id="diceHistoryList"></div></section><div class="dice-summary" id="diceSummary"></div>
     <div class="dice-count-adjust" aria-label="이번 판정 주사위 개수 조절">
       <span>이번 판정</span>
@@ -4594,16 +4595,49 @@ function playDiceFailure(){
 }
 function playDiceVictory(successCount){
   const ctx=diceAudioContext(); if(!ctx) return;
-  const level=Math.min(Math.max(successCount||1,1),12), volume=.055+level*.008;
-  [392,523,659,784,1047].forEach(function(freq,index){
-    const now=ctx.currentTime+index*.095, gain=ctx.createGain();
-    gain.gain.setValueAtTime(.0001,now); gain.gain.exponentialRampToValueAtTime(volume,now+.022); gain.gain.exponentialRampToValueAtTime(.0001,now+.36);
-    [freq,freq*1.004].forEach(function(tone,voice){
-      const osc=ctx.createOscillator(); osc.type=voice?"triangle":"sawtooth"; osc.frequency.setValueAtTime(tone,now);
-      osc.connect(gain); osc.start(now); osc.stop(now+.38);
+  const level=Math.min(Math.max(successCount||1,1),12), now=ctx.currentTime;
+  if(level>=5){
+    [523.25,659.25,783.99,1046.5,783.99,1046.5,1318.51,1046.5,1318.51,1567.98,1318.51,1567.98].forEach(function(freq,index){
+      const start=now+index*.105, osc=ctx.createOscillator(), gain=ctx.createGain();
+      osc.type="sine"; osc.frequency.setValueAtTime(freq,start);
+      gain.gain.setValueAtTime(.0001,start); gain.gain.exponentialRampToValueAtTime(.095,start+.012); gain.gain.exponentialRampToValueAtTime(.0001,start+.54);
+      osc.connect(gain).connect(ctx.destination); osc.start(start); osc.stop(start+.56);
     });
-    gain.connect(ctx.destination);
+    [[.48,[261.63,329.63,392,523.25],.055,.8],[1.08,[261.63,329.63,392,523.25,659.25,783.99],.075,1.18+level*.02]].forEach(function(hit){
+      hit[1].forEach(function(freq,index){
+        const start=now+hit[0], osc=ctx.createOscillator(), gain=ctx.createGain();
+        osc.type=index%2?"triangle":"sine"; osc.frequency.setValueAtTime(freq,start);
+        gain.gain.setValueAtTime(.0001,start); gain.gain.exponentialRampToValueAtTime(hit[2],start+.02); gain.gain.exponentialRampToValueAtTime(.0001,start+hit[3]);
+        osc.connect(gain).connect(ctx.destination); osc.start(start); osc.stop(start+hit[3]+.02);
+      });
+    });
+    return;
+  }
+  const notes=level<=2?[523.25,659.25,783.99]:level<=4?[523.25,659.25,783.99,1046.5,783.99,1046.5]:[392,523.25,659.25,783.99,1046.5,1318.51,1046.5,1318.51,1567.98];
+  const gap=level<=2?.08:level<=4?.105:.13, tail=level<=2?.28:level<=4?.46:.72, volume=level<=2?.075:level<=4?.085:.095;
+  notes.forEach(function(freq,index){
+    const start=now+index*gap, osc=ctx.createOscillator(), gain=ctx.createGain();
+    osc.type="sine"; osc.frequency.setValueAtTime(freq,start);
+    gain.gain.setValueAtTime(.0001,start); gain.gain.exponentialRampToValueAtTime(volume,start+.012); gain.gain.exponentialRampToValueAtTime(.0001,start+tail);
+    osc.connect(gain).connect(ctx.destination); osc.start(start); osc.stop(start+tail+.02);
   });
+  if(level>=3){
+    const start=now+(level<=4?.48:.78);
+    [261.63,329.63,392,523.25].forEach(function(freq,index){
+      const osc=ctx.createOscillator(), gain=ctx.createGain();
+      osc.type=index%2?"triangle":"sine"; osc.frequency.setValueAtTime(freq,start);
+      gain.gain.setValueAtTime(.0001,start); gain.gain.exponentialRampToValueAtTime(volume*.42,start+.02); gain.gain.exponentialRampToValueAtTime(.0001,start+tail+.42);
+      osc.connect(gain).connect(ctx.destination); osc.start(start); osc.stop(start+tail+.45);
+    });
+  }
+  if(level>=5){
+    [1760,2093].forEach(function(freq,index){
+      const start=now+1.22+index*.18, osc=ctx.createOscillator(), gain=ctx.createGain();
+      osc.type="sine"; osc.frequency.setValueAtTime(freq,start);
+      gain.gain.setValueAtTime(.0001,start); gain.gain.exponentialRampToValueAtTime(.045,start+.01); gain.gain.exponentialRampToValueAtTime(.0001,start+.55);
+      osc.connect(gain).connect(ctx.destination); osc.start(start); osc.stop(start+.58);
+    });
+  }
 }
 function playBoardFailure(x){
   if(!x.shattered||!x.sound){ lastBoardFailure=""; return; }
@@ -5271,14 +5305,15 @@ function renderBoard(){
   if(die){
     if(active&&active.dice){
       const x=active.dice, label=x.mode==="blessed"?"축복":x.mode==="cursed"?"저주":"일반";
-      die.hidden=false; die.className="board-dice on "+(x.mode||"normal")+(x.shattered?" shattered":"")+(x.celebrating?" celebrating":"");
+      die.hidden=false; die.className="board-dice on "+(x.mode||"normal")+(x.shattered?" shattered":"")+(x.celebrating?" celebrating perfect-"+(x.perfectLevel||1):"");
       const threshold=x.mode==="blessed"?4:x.mode==="cursed"?6:5;
       const count=Math.max(1,x.values.length);
       const cols=Math.min(count,Math.max(1,Math.ceil(Math.sqrt(count*innerWidth/Math.max(180,innerHeight*.55)))));
       die.style.setProperty("--bd-cols",cols);
       die.style.setProperty("--bd-rows",Math.ceil(count/cols));
       setVictoryVars(die,count);
-      die.innerHTML='<div class="bd-kicker">'+label+' · '+threshold+' 이상 성공</div><div class="bd-name">'+active.name+' · '+x.label+'</div><div class="bd-faces'+(x.rolling?' rolling':'')+'">'+x.values.map(function(v){ const success=!x.rolling&&v>=threshold; return '<span class="bd-face'+(success?' success':'')+'" aria-label="'+v+(success?' 성공':' 실패')+'">'+v+(success?'<span class="bd-check" aria-hidden="true">✓</span>':'')+'</span>'; }).join("")+'</div><div class="bd-result'+(x.shattered?' failure':'')+(x.celebrating?' victory':'')+'" aria-live="polite">'+(x.rolling?'<strong>굴리는 중…</strong>':x.shattered?'<strong>완전 실패</strong><small>0 성공</small>':x.celebrating?'<strong>대성공</strong><small>'+x.values.length+'개 모두 성공</small>':'<strong>'+x.successes+'</strong> 성공'+(x.sixExtra?' <small>(6보정 +'+x.sixExtra+')</small>':''))+'</div>';
+      const perfectTitle=x.perfectLevel===1?"완벽한 성공":x.perfectLevel===2?"대성공":"압도적 대성공";
+      die.innerHTML='<div class="bd-kicker">'+label+' · '+threshold+' 이상 성공</div><div class="bd-name">'+active.name+' · '+x.label+'</div><div class="bd-faces'+(x.rolling?' rolling':'')+'">'+x.values.map(function(v){ const success=!x.rolling&&v>=threshold; return '<span class="bd-face'+(success?' success':'')+'" aria-label="'+v+(success?' 성공':' 실패')+'">'+v+(success?'<span class="bd-check" aria-hidden="true">✓</span>':'')+'</span>'; }).join("")+'</div><div class="bd-result'+(x.shattered?' failure':'')+(x.celebrating?' victory':'')+'" aria-live="polite">'+(x.rolling?'<strong>굴리는 중…</strong>':x.shattered?'<strong>완전 실패</strong><small>0 성공</small>':x.celebrating?'<strong>'+perfectTitle+'</strong>':'<strong>'+x.successes+'</strong> 성공'+(x.sixExtra?' <small>(6보정 +'+x.sixExtra+')</small>':''))+'</div>';
       const base=Number.isFinite(x.baseCount)?x.baseCount:x.values.length;
       const modifier=Number.isFinite(x.modifier)?x.modifier:0;
       const total=Number.isFinite(x.count)?x.count:x.values.length;
@@ -5821,6 +5856,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   const countAdjust=document.querySelector(".dice-count-adjust");
   const countValue=document.getElementById("diceCountValue");
   const motionBtn=document.getElementById("motionPermission");
+  const narrative=document.getElementById("diceNarrative");
   let dice={sid:"",part:"",label:"",count:0,values:[],selected:new Set(),rolling:false,pendingAction:""};
   let rollTimer=null, lastShake=0, lastMotion=0, motionSeen=false, motionPromptTimer=null;
 
@@ -5900,13 +5936,40 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     const mode=rqOf().mode;
     return mode==="blessed"?value>=4:mode==="cursed"?value===6:value>=5;
   }
+  const NARRATIVE={
+    lore:{fail:"알고 있던 모든 것이 지금만큼은 아무 도움이 되지 않았습니다.",streak:["필요한 사실 하나를 찾아냈습니다.","흩어진 정보가 서로 이어집니다.","복잡한 상황의 핵심이 선명해집니다."],perfect:["작은 단서도 놓치지 않았습니다.","모든 정보가 빈틈없이 맞아떨어졌습니다.","감춰진 진실의 윤곽이 완전히 드러났습니다."]},
+    magic:{fail:"보이지 않는 힘이 당신의 뜻을 비껴 지나갔습니다.",streak:["미약한 힘이 당신의 뜻에 반응합니다.","의식의 흐름이 안정적으로 이어집니다.","보이지 않는 힘이 분명히 응답합니다."],perfect:["작은 힘의 흐름까지 정확히 붙잡았습니다.","의식이 한 치의 오차 없이 이어집니다.","현실의 장막이 잠시 당신의 뜻에 굴복했습니다."]},
+    influence:{fail:"당신의 존재는 상대에게 아무런 흔적도 남기지 못했습니다.",streak:["당신의 말이 작은 변화를 만들었습니다.","상대의 태도가 조금씩 기울기 시작합니다.","당신의 존재감이 상황의 흐름을 바꿉니다."],perfect:["짧은 말 한마디가 정확히 닿았습니다.","상대의 마음을 완전히 읽고 움직였습니다.","당신의 한마디가 이곳의 분위기를 장악했습니다."]},
+    asset:{fail:"준비한 수단은 결정적인 순간에 쓸모를 잃었습니다.",streak:["준비한 수단이 제때 역할을 해냈습니다.","필요한 자원을 빈틈없이 활용했습니다.","준비해 둔 수단이 결정적인 힘을 발휘합니다."],perfect:["준비한 것 하나하나가 정확히 쓰였습니다.","모든 수단이 완벽하게 맞물렸습니다.","모든 준비가 상황을 뒤집었습니다."]},
+    observation:{fail:"무언가를 놓쳤다는 감각만이 늦게 따라옵니다.",streak:["수상한 흔적 하나를 포착했습니다.","흩어진 단서가 하나의 방향을 가리킵니다.","놓치기 쉬운 진실까지 또렷하게 읽어 냈습니다."],perfect:["아주 작은 흔적까지 눈에 들어왔습니다.","주변의 단서가 완벽한 그림을 이룹니다.","주변의 모든 움직임이 당신에게만 의미를 드러냅니다."]},
+    strength:{fail:"힘을 쏟았지만, 상황은 조금도 움직이지 않았습니다.",streak:["힘을 실은 행동이 예상대로 이어졌습니다.","상황을 확실히 자신의 쪽으로 밀어냈습니다.","버티거나 움직여야 할 것을 완전히 제압했습니다."],perfect:["힘의 낭비 없이 정확히 해냈습니다.","몸의 움직임이 완벽하게 맞아떨어졌습니다.","압도적인 힘으로 상황의 균형을 단숨에 바꿨습니다."]},
+    combat:{fail:"당신의 시도는 상대에게 닿지 못했습니다.",streak:["빈틈을 포착해 공격을 정확히 밀어 넣었습니다.","공격의 흐름을 잡고 거침없이 몰아붙였습니다.","상대가 피하기 어려운 연속 공격을 이어 갔습니다."],perfect:["작은 빈틈도 놓치지 않고 공격했습니다.","모든 움직임이 공격의 흐름으로 이어집니다.","전장의 주도권을 완전히 움켜쥐었습니다."]},
+    will:{fail:"마음속으로 파고든 공포를 끝내 밀어낼 수 없었습니다.",streak:["흔들리는 마음을 간신히 붙잡았습니다.","공포가 파고들 틈을 만들지 않았습니다.","정신을 짓누르던 압박을 완전히 밀어냈습니다."],perfect:["작은 불안도 마음을 흔들지 못했습니다.","마음속 어둠을 빈틈없이 밀어냈습니다.","마음속 어둠조차 당신을 흔들 수 없었습니다."]},
+    willCombat:{fail:"두려움이 판단보다 먼저 몸을 멈춰 세웠습니다.",streak:["두려움을 누르고 흔들림 없이 맞섰습니다.","공포를 뚫고 행동을 끝까지 이어 갔습니다.","상대의 위압감 속에서도 정신을 단단히 지켰습니다."],perfect:["작은 공포에도 흔들리지 않았습니다.","두려움을 완전히 누르고 맞섰습니다.","당신의 의지는 그 어떤 공포보다도 강했습니다."]}
+  };
+  function narrativeKind(){
+    if(dice.sid==="lore") return dice.part==="spl"?"magic":"lore";
+    if(dice.sid==="inf") return dice.part==="acq"?"asset":"influence";
+    if(dice.sid==="obs") return "observation";
+    if(dice.sid==="str") return dice.part==="cbt"?"combat":"strength";
+    return dice.part==="cbt"?"willCombat":"will";
+  }
+  function paintNarrative(){
+    const kind=NARRATIVE[narrativeKind()];
+    const successes=successTotal();
+    const key=dice.rolling?null:dice.shattered?"fail":dice.celebrating?"win":successes>=3?"good":null;
+    const tier=successes>=8?2:successes>=5?1:0;
+    narrative.hidden=!key;
+    narrative.className="dice-narrative"+(key?" "+key:"");
+    narrative.textContent=!key?"":key==="fail"?kind.fail:key==="win"?kind.perfect[(dice.perfectLevel||1)-1]:kind.streak[tier];
+  }
   function successTotal(){
     const q=rqOf();
     return dice.values.reduce(function(total,value){ return total+(isSuccess(value)?(q.sixBonus&&value===6?2:1):0); },0);
   }
   function publishDiceOverlay(){
     if(modal.hidden||!dice.values.length) diceOverlay=null;
-    else { const q=rqOf(), sixExtra=q.sixBonus?dice.values.filter(function(v){return v===6;}).length:0; diceOverlay={label:dice.label,baseCount:dice.baseCount,modifier:dice.count-dice.baseCount,count:dice.count,values:dice.values.slice(),successes:successTotal(),sixExtra:sixExtra,mode:q.mode,rolling:dice.rolling,shattered:!!dice.shattered,celebrating:!!dice.celebrating}; }
+    else { const q=rqOf(), sixExtra=q.sixBonus?dice.values.filter(function(v){return v===6;}).length:0; diceOverlay={label:dice.label,baseCount:dice.baseCount,modifier:dice.count-dice.baseCount,count:dice.count,values:dice.values.slice(),successes:successTotal(),sixExtra:sixExtra,mode:q.mode,rolling:dice.rolling,shattered:!!dice.shattered,celebrating:!!dice.celebrating,perfectLevel:dice.perfectLevel||0}; }
     publishSnap();
   }
   function actionInfo(type){
@@ -5928,14 +5991,18 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     grid.classList.toggle("celebrating",!!dice.celebrating);
     modal.classList.toggle("dice-shattered",!!dice.shattered);
     modal.classList.toggle("dice-celebrating",!!dice.celebrating);
+    modal.classList.toggle("perfect-1",dice.perfectLevel===1);
+    modal.classList.toggle("perfect-2",dice.perfectLevel===2);
+    modal.classList.toggle("perfect-3",dice.perfectLevel===3);
     setVictoryVars(modal,dice.values.length);
+    paintNarrative();
     document.getElementById("diceReady").hidden=!!dice.values.length;
     if(!dice.values.length){ result.textContent=dice.count?"칸을 누르거나 휴대폰을 흔들어 굴리세요":"굴릴 주사위가 없습니다"; return; }
     if(dice.rolling){ result.textContent="주사위가 구르는 중…"; return; }
     if(dice.pendingAction){ result.textContent=actionInfo(dice.pendingAction).label+"을 적용할 주사위를 선택하세요. 같은 버튼을 다시 누르거나 Esc로 취소합니다."; return; }
     const successes=successTotal(), q=rqOf();
     if(dice.shattered){ result.innerHTML='<strong class="dice-failure">완전 실패</strong><span>0 성공 · '+dice.values.join(" · ")+'</span>'; return; }
-    if(dice.celebrating){ result.innerHTML='<strong class="dice-victory">대성공</strong><span>'+dice.values.length+'개 모두 성공 · '+dice.values.join(" · ")+'</span>'; return; }
+    if(dice.celebrating){ const title=dice.perfectLevel===1?"완벽한 성공":dice.perfectLevel===2?"대성공":"압도적 대성공"; result.innerHTML='<strong class="dice-victory">'+title+'</strong>'; return; }
     result.innerHTML='<strong>'+successes+' 성공</strong>'+(q.sixBonus&&dice.values.filter(function(v){return v===6;}).length?' (6보정 +'+dice.values.filter(function(v){return v===6;}).length+')':'')+' · '+dice.values.join(" · ");
   }
   function actionButton(type,label,count){
@@ -5969,7 +6036,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     if(dice.rolling||!dice.count) return;
     if(!dice.values.length) dice.values=Array.from({length:dice.count},randomDie);
     const targets=indices&&indices.length?indices:Array.from({length:dice.count},function(_,i){return i;});
-    dice.rolling=true; dice.shattered=false; dice.celebrating=false; dice.selected.clear(); paintDice(); paintActions();
+    dice.rolling=true; dice.shattered=false; dice.celebrating=false; dice.perfectLevel=0; dice.selected.clear(); paintDice(); paintActions();
     setDiceRollSound(true);
     if(navigator.vibrate) navigator.vibrate(10);
     let ticks=0;
@@ -5977,7 +6044,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     rollTimer=setInterval(function(){
       targets.forEach(function(i){ dice.values[i]=randomDie(); });
       paintDice(); publishDiceOverlay();
-      if(++ticks>=15){ clearInterval(rollTimer); rollTimer=null; dice.rolling=false; dice.shattered=successTotal()===0; dice.celebrating=!dice.shattered&&dice.values.length>0&&dice.values.every(isSuccess); setDiceRollSound(false); if(dice.shattered){ if(diceSoundEnabled()) playDiceFailure(); if(navigator.vibrate) navigator.vibrate([24,22,96]); } else if(dice.celebrating){ if(diceSoundEnabled()) playDiceVictory(dice.values.length); if(navigator.vibrate) navigator.vibrate([16,35,16]); } else if(navigator.vibrate) navigator.vibrate(18); paintDice(); paintActions(); publishDiceOverlay(); recordDice(reason||"첫 굴림",indices); }
+      if(++ticks>=15){ clearInterval(rollTimer); rollTimer=null; dice.rolling=false; dice.shattered=successTotal()===0; dice.celebrating=!dice.shattered&&dice.values.length>0&&dice.values.every(isSuccess); dice.perfectLevel=dice.celebrating?(dice.values.length<=2?1:dice.values.length<=4?2:3):0; setDiceRollSound(false); if(dice.shattered){ if(diceSoundEnabled()) playDiceFailure(); if(navigator.vibrate) navigator.vibrate([24,22,96]); } else if(dice.celebrating){ if(diceSoundEnabled()) playDiceVictory(dice.values.length); if(navigator.vibrate) navigator.vibrate([16,35,16]); } else if(navigator.vibrate) navigator.vibrate(18); paintDice(); paintActions(); publishDiceOverlay(); recordDice(reason||"첫 굴림",indices); }
     },85);
   }
   function useAction(type){
@@ -6030,7 +6097,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
       const action=actionInfo(dice.pendingAction);
       dice.pendingAction=""; dice.selected.clear();
       if(action&&consume(action.owner,action.key)){
-        if(action.mode==="plus1"){ const wasCelebrating=!!dice.celebrating; dice.values[i]=Math.min(6,dice.values[i]+1); dice.shattered=successTotal()===0; dice.celebrating=!dice.shattered&&dice.values.length>0&&dice.values.every(isSuccess); if(dice.celebrating&&!wasCelebrating){ if(diceSoundEnabled()) playDiceVictory(dice.values.length); if(navigator.vibrate) navigator.vibrate([16,35,16]); } recordDice(action.label,[i]); }
+        if(action.mode==="plus1"){ const wasCelebrating=!!dice.celebrating; dice.values[i]=Math.min(6,dice.values[i]+1); dice.shattered=successTotal()===0; dice.celebrating=!dice.shattered&&dice.values.length>0&&dice.values.every(isSuccess); dice.perfectLevel=dice.celebrating?(dice.values.length<=2?1:dice.values.length<=4?2:3):0; if(dice.celebrating&&!wasCelebrating){ if(diceSoundEnabled()) playDiceVictory(dice.values.length); if(navigator.vibrate) navigator.vibrate([16,35,16]); } recordDice(action.label,[i]); }
         else roll([i],action.label);
       }
       if(navigator.vibrate) navigator.vibrate(12);
@@ -6098,7 +6165,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260914-g";
+const APP_VER="20260914-h";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;
