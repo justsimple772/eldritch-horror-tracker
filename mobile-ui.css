@@ -390,3 +390,20 @@ body.round-blessed.mobile-ui #stage .cell button { background:#f7ecd8; border-co
 .dice-history p { white-space:pre-line; line-height:1.5; margin:8px 0; }
 .dice-history .history-values { font-size:20px; font-weight:800; color:#e4ffcc; }
 .dice-history small { color:#ded2e4; }
+/* Prevent iOS long-press selection before and after the dice dialog opens. */
+.skill .cell[data-part],
+.skill .cell[data-part] *,
+#diceModal,
+#diceModal * {
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
+}
+.skill .cell[data-part] input,
+.skill .cell[data-part] textarea,
+#diceModal input,
+#diceModal textarea {
+  -webkit-user-select:text;
+  user-select:text;
+  -webkit-touch-callout:default;
+}

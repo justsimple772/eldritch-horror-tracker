@@ -3040,7 +3040,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260914-b">
+<link rel="stylesheet" href="mobile-ui.css?v=20260914-c">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -5901,6 +5901,8 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     dice.selected.clear(); paintDice(); paintActions();
   }
   function openDice(sid,part){
+    const selection=window.getSelection();
+    if(selection) selection.removeAllRanges();
     const ctx=contextFor(sid,part), slot=state(), sk=slot.skills[sid];
     if(rqOf().ring){ const ring=ensureFlag(slot,"ring"); ring.n=1; ring.used=[false]; save(); }
     dice={sid:sid,part:part,label:ctx.label,count:ctx.count,baseCount:ctx.count,values:[],selected:new Set(),rolling:false,pendingAction:""};
@@ -5975,7 +5977,16 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   });
   document.addEventListener("pointermove",function(e){ if(hold&&Math.hypot(e.clientX-startX,e.clientY-startY)>12) cancelHold(); });
   ["pointerup","pointercancel"].forEach(function(ev){ document.addEventListener(ev,cancelHold); });
-  document.addEventListener("contextmenu",function(e){ if(e.target.closest(".skill .cell[data-part]")&&!e.target.closest("button")) e.preventDefault(); });
+  function isDiceInteraction(target){
+    return target instanceof Element &&
+      !target.closest('input,textarea,[contenteditable="true"]') &&
+      target.closest(".skill .cell[data-part],#diceModal");
+  }
+  ["selectstart","contextmenu"].forEach(function(eventName){
+    document.addEventListener(eventName,function(e){
+      if(isDiceInteraction(e.target)) e.preventDefault();
+    });
+  });
 })();
 
 applyScale();
@@ -5987,7 +5998,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260914-b";
+const APP_VER="20260914-c";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;
