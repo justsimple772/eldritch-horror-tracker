@@ -3052,7 +3052,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260915-v">
+<link rel="stylesheet" href="mobile-ui.css?v=20260915-y">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -5349,7 +5349,7 @@ function renderBoard(){
       setVictoryVars(die,count);
       const perfectTitle=x.perfectLevel===1?"완벽한 성공":x.perfectLevel===2?"대성공":"압도적 대성공";
       const boardNarrative=x.narrative&&x.narrative.text?'<div class="bd-narrative '+(x.narrative.tone||"")+'">'+String(x.narrative.text).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];})+'</div>':'';
-      die.innerHTML='<button type="button" class="bd-close" aria-label="전광판 주사위 결과 닫기">×</button><div class="bd-kicker">'+label+' · '+threshold+' 이상 성공</div><div class="bd-name">'+active.name+' · '+x.label+'</div>'+boardNarrative+'<div class="bd-faces'+(x.rolling?' rolling':'')+'">'+x.values.map(function(v){ const success=!x.rolling&&v>=threshold; return '<span class="bd-face'+(success?' success':'')+'" aria-label="'+v+(success?' 성공':' 실패')+'">'+v+(success?'<span class="bd-check" aria-hidden="true">✓</span>':'')+'</span>'; }).join("")+'</div><div class="bd-result'+(x.shattered?' failure':'')+(x.celebrating?' victory':'')+'" aria-live="polite">'+(x.rolling?'<strong>굴리는 중…</strong>':x.shattered?'<strong>완전 실패</strong><small>0 성공</small>':x.celebrating?'<strong>'+perfectTitle+'</strong>':'<strong>'+x.successes+'</strong> 성공'+(x.sixExtra?' <small>(6보정 +'+x.sixExtra+')</small>':''))+'</div>';
+      die.innerHTML='<button type="button" class="bd-close" aria-label="전광판 주사위 결과 닫기">×</button><div class="bd-kicker">'+label+' · '+threshold+' 이상 성공</div><div class="bd-name">'+active.name+' · '+x.label+'</div>'+boardNarrative+'<div class="bd-faces'+(x.rolling?' rolling':'')+'">'+x.values.map(function(v){ const success=!x.rolling&&v>=threshold, sixBoost=success&&x.sixExtra&&v===6; return '<span class="bd-face'+(success?' success':'')+(sixBoost?' six-bonus':'')+'" aria-label="'+v+(success?' 성공':' 실패')+(sixBoost?' · 6보정으로 성공 2개':'')+'">'+v+(success?'<span class="bd-check" aria-hidden="true">✓</span>':'')+'</span>'; }).join("")+'</div><div class="bd-result'+(x.shattered?' failure':'')+(x.celebrating?' victory':'')+'" aria-live="polite">'+(x.rolling?'<strong>굴리는 중…</strong>':x.shattered?'<strong>완전 실패</strong><small>0성공</small>':x.celebrating?'<strong>'+perfectTitle+'<span class="bd-success-count">('+x.successes+'성공)</span></strong>':'<strong>'+x.successes+'성공</strong>')+'</div>';
       const base=Number.isFinite(x.baseCount)?x.baseCount:x.values.length;
       const modifier=Number.isFinite(x.modifier)?x.modifier:0;
       const total=Number.isFinite(x.count)?x.count:x.values.length;
@@ -6188,8 +6188,10 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   }
   function paintDice(){
 
+    const q=rqOf();
     grid.innerHTML=dice.values.map(function(v,i){
-      return '<span class="dice-face'+(isSuccess(v)?' success':'')+(dice.selected.has(i)?' selected':'')+(dice.pendingAction?' dice-target':'')+'" data-die="'+i+'" aria-label="'+v+'">'+v+'</span>';
+      const success=isSuccess(v), sixBoost=!dice.rolling&&success&&q.sixBonus&&v===6;
+      return '<span class="dice-face'+(success?' success':'')+(sixBoost?' six-bonus':'')+(dice.selected.has(i)?' selected':'')+(dice.pendingAction?' dice-target':'')+'" data-die="'+i+'" aria-label="'+v+(sixBoost?' · 6보정으로 성공 2개':'')+'">'+v+'</span>';
     }).join("");
     grid.classList.toggle("rolling",dice.rolling);
     grid.classList.toggle("shattered",!!dice.shattered);
@@ -6199,16 +6201,18 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     modal.classList.toggle("perfect-1",dice.perfectLevel===1);
     modal.classList.toggle("perfect-2",dice.perfectLevel===2);
     modal.classList.toggle("perfect-3",dice.perfectLevel===3);
+    result.classList.toggle("failure",!!dice.shattered);
+    result.classList.toggle("victory",!!dice.celebrating);
     setVictoryVars(modal,dice.values.length);
     paintNarrative();
     document.getElementById("diceReady").hidden=!!dice.values.length;
     if(!dice.values.length){ result.textContent=dice.count?"칸을 누르거나 휴대폰을 흔들어 굴리세요":"굴릴 주사위가 없습니다"; return; }
     if(dice.rolling){ result.textContent="주사위가 구르는 중…"; return; }
     if(dice.pendingAction){ result.textContent=actionInfo(dice.pendingAction).label+"을 적용할 주사위를 선택하세요. 같은 버튼을 다시 누르거나 Esc로 취소합니다."; return; }
-    const successes=successTotal(), q=rqOf();
-    if(dice.shattered){ result.innerHTML='<strong class="dice-failure">완전 실패</strong><span>0 성공 · '+dice.values.join(" · ")+'</span>'; return; }
-    if(dice.celebrating){ const title=dice.perfectLevel===1?"완벽한 성공":dice.perfectLevel===2?"대성공":"압도적 대성공"; result.innerHTML='<strong class="dice-victory">'+title+'</strong>'; return; }
-    result.innerHTML='<strong>'+successes+' 성공</strong>'+(q.sixBonus&&dice.values.filter(function(v){return v===6;}).length?' (6보정 +'+dice.values.filter(function(v){return v===6;}).length+')':'')+' · '+dice.values.join(" · ");
+    const successes=successTotal();
+    if(dice.shattered){ result.innerHTML='<strong class="dice-failure">완전 실패</strong><span>0성공</span>'; return; }
+    if(dice.celebrating){ const title=dice.perfectLevel===1?"완벽한 성공":dice.perfectLevel===2?"대성공":"압도적 대성공"; result.innerHTML='<strong class="dice-victory">'+title+'<span class="success-count">('+successes+'성공)</span></strong>'; return; }
+    result.innerHTML='<strong>'+successes+'성공</strong>';
   }
   function actionButton(type,label,count){
     return '<button type="button" class="dice-action'+(dice.pendingAction===type?' selecting':'')+'" data-dice-action="'+type+'"'+((!count||!dice.values.length||dice.rolling)?' disabled':'')+'><span>'+label+'</span><b>'+count+'회</b></button>';
@@ -6370,7 +6374,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260915-v";
+const APP_VER="20260915-y";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;
