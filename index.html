@@ -2277,7 +2277,8 @@
     width:100%; min-height:42px; border:1px solid #9b7438; border-radius:7px;
     background:#19120f; color:#fff8e8; padding:7px 9px; font-size:15px; font-weight:700;
   }
-  .board-edit-skills { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; margin-top:10px; }
+  .board-edit-skills { display:flex; flex-direction:column; gap:7px; margin-top:10px; }
+  .board-edit-skill-row { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
   .board-edit-skill {
     display:grid; grid-template-columns:minmax(64px,1fr) 40px 54px 40px;
     align-items:center; gap:5px; min-height:44px; padding:5px 7px;
@@ -2286,6 +2287,19 @@
   .board-edit-skill span { font-size:13px; font-weight:800; color:#fff0ca; }
   .board-edit-skill b { text-align:center; font-size:22px; color:#fff; }
   .board-edit-skill button { min-width:40px; min-height:36px; padding:0; font-size:20px; }
+  .board-edit-skill.lore { background:#5B3A8C; border-color:#9B78CB; }
+  .board-edit-skill.spl { background:#2E2054; border-color:#8065B5; }
+  .board-edit-skill.inf { background:#B18C1F; border-color:#E1C45E; }
+  .board-edit-skill.acq { background:#4B3913; border-color:#B99A42; }
+  .board-edit-skill.obs { background:#24794B; border-color:#62B98A; }
+  .board-edit-skill.str { background:#A52A2A; border-color:#DD6B62; }
+  .board-edit-skill.str-cbt { background:#4A1D1D; border-color:#B95E58; }
+  .board-edit-skill.will { background:#285B9B; border-color:#6E9FD8; }
+  .board-edit-skill.will-cbt { background:#17365F; border-color:#668FC4; }
+  .board-edit-skill span,
+  .board-edit-skill b { color:#fff !important; text-shadow:0 1px 2px rgba(0,0,0,.65); }
+  .board-edit-skill button { background:rgba(12,10,10,.58); border-color:rgba(255,255,255,.48); color:#fff; }
+  .board-edit-skill.ph { visibility:hidden; pointer-events:none; }
   .board-edit-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
   .board-edit-actions button { min-height:42px; min-width:92px; font-weight:800; }
   .board-edit-actions .save { background:#b58a43; color:#160f0b; border-color:#e0ba70; }
@@ -2302,7 +2316,8 @@
     .board-edit-head h3 { font-size:16px; }
     .board-edit-fields { grid-template-columns:1fr 1fr; gap:7px; }
     .board-edit-fields select { min-height:36px; font-size:13px; }
-    .board-edit-skills { grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; margin-top:7px; }
+    .board-edit-skills { gap:5px; margin-top:7px; }
+    .board-edit-skill-row { gap:5px; }
     .board-edit-skill { grid-template-columns:minmax(54px,1fr) 34px 42px 34px; min-height:36px; padding:3px 5px; }
     .board-edit-skill b { font-size:18px; }
     .board-edit-skill button { min-width:32px; min-height:30px; font-size:17px; }
@@ -3101,7 +3116,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260920-c">
+<link rel="stylesheet" href="mobile-ui.css?v=20260921-d">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -3223,7 +3238,7 @@
       <div class="dice-head-buttons"><button type="button" class="dice-close" id="diceHistoryOpen">기록</button><button type="button" class="dice-close" id="diceClose" aria-label="주사위 창 닫기">닫기</button></div>
     </header>
     <div class="dice-narrative" id="diceNarrative" hidden aria-live="polite"></div>
-    <section id="diceHistory" class="dice-history" role="dialog" aria-modal="true" aria-label="주사위 기록" hidden><header><h2>주사위 기록</h2><button type="button" class="dice-close" id="diceHistoryClose">돌아가기</button></header><p id="diceHistoryNotice">이 기기에 저장된 기록 · 최신순</p><div id="diceHistoryList"></div></section><div class="dice-summary" id="diceSummary"></div>
+    <section id="diceHistory" class="dice-history" role="dialog" aria-modal="true" aria-label="주사위 기록" hidden><header><h2>주사위 기록</h2><button type="button" class="dice-close" id="diceHistoryClose">돌아가기</button></header><p id="diceHistoryNotice">이 기기에 저장된 기록 · 최신순</p><div id="diceHistoryList"></div></section>
     <div class="dice-context" id="diceContext" role="group" aria-label="이번 판정 상황"></div>
     <div class="dice-count-adjust" aria-label="이번 판정 주사위 개수 조절">
       <span>이번 판정</span>
@@ -3857,13 +3872,25 @@ function paintSkillFlags(sid){
     const n=Math.max(0,q[key]|0);
     const f=s[key]||emptyFlag();
     if(f.n!==n){ f.n=n; while(f.used.length<n) f.used.push(false); f.used=f.used.slice(0,n); s[key]=f; }
-    let h="";
-    for(let i=0;i<n;i++){
-      h+='<div class="flag simple compact'+(n?" en":"")+(f.used[i]?" used":"")+'" data-flag="'+key+'" data-sid="'+sid+'" data-i="'+i+'"><div class="ft">'+label+'</div></div>';
-    }
-    return h;
+    if(!n) return "";
+    const permanent=key==="success";
+    if(permanent) f.used=Array(n).fill(false);
+    const left=permanent?n:f.used.filter(function(used){return !used;}).length;
+    const count=n>1?" ×"+left:"";
+    const stateText=permanent?"상시 적용":left+"회 남음";
+    return '<div class="flag simple compact en aggregate-flag'+(permanent?" permanent-flag":"")+(!permanent&&!left?" used":"")+'" data-aggregate="true"'+(permanent?' data-permanent="true"':'')+' data-flag="'+key+'" data-sid="'+sid+'" aria-label="'+label+' '+stateText+'"><div class="ft">'+label+count+'</div></div>';
   }
-  html+=many("리롤","reroll")+many("+1","plus1")+many("추가⚄","success");
+  html+=many("리롤","reroll")+many("+1","plus1")+many("추가 🎲","success");
+  const shortScope={magic:"마법",combat:"전투",asset:"자산",research:"조사",gate:"차원문"};
+  const shortEffect={dice:"🎲",reroll:"리롤",plus1:"+1"};
+  q.conditional.forEach(function(item){
+    const scope=shortScope[item.scope]||item.scope;
+    const effect=shortEffect[item.effect]||item.effect;
+    const count=Math.max(1,item.count|0);
+    const countText=count>1?" ×"+count:"";
+    const label=scope+" "+effect+countText;
+    html+='<div class="flag simple compact en condition-flag scope-'+item.scope+' effect-'+item.effect+'" aria-label="'+label+' 전용 보정" title="'+label+' 전용 보정"><div class="ft">'+label+'</div></div>';
+  });
   return html;
 }
 function openSqPop(sid){
@@ -3884,17 +3911,17 @@ function paintRoundFlags(){
     const n=Math.max(0, q[key]|0);
     const f=s[key]||emptyFlag();
     if(f.n!==n){ f.n=n; while(f.used.length<n) f.used.push(false); f.used=f.used.slice(0,n); s[key]=f; }
-    let h="";
-    for(let i=0;i<n;i++){
-      const used=!!f.used[i];
-      h+='<div class="flag simple compact'+(n?" en":"")+(used?" used":"")+'" data-flag="'+key+'" data-sid="slot" data-i="'+i+'"><div class="ft">'+label+'</div></div>';
-    }
-    return h;
+    if(!n) return "";
+    const left=f.used.filter(function(used){return !used;}).length;
+    const count=n>1?" ×"+left:"";
+    return '<div class="flag simple compact en aggregate-flag'+(!left?" used":"")+'" data-aggregate="true" data-flag="'+key+'" data-sid="slot" aria-label="'+label+' '+left+'회 남음"><div class="ft">'+label+count+'</div></div>';
   }
   let h=many("리롤","rr")+many("전체리롤","arr")+many("+1","p1");
   if(q.ring){
     if(!s.ring) s.ring=emptyFlag();
     s.ring.n=1;
+    while(s.ring.used.length<1) s.ring.used.push(false);
+    s.ring.used=s.ring.used.slice(0,1);
     h+=flagBtn(s,"행운의 반지","ring","slot",{simple:true,noPips:true});
   } else if(s.ring){ s.ring.n=0; }
   if(q.sixBonus) h+='<span class="round-mode">6보정</span>';
@@ -3919,8 +3946,8 @@ function flagBtn(s, label, key, sid, opt){
   const en=f.n>0;
   const compact=!!(opt.simple && sid==="slot" && document.body.classList.contains("tall") && key!=="cigarette");
   if(compact){
-    const used=(key==="ring") ? en : !!(f.used && f.used[0]);
-    return '<div class="flag simple compact'+(en?" en":"")+(used?" used":"")+'" data-flag="'+key+'" data-sid="'+sid+'"><div class="ft">'+label+'</div></div>';
+    const used=!!(f.used && f.used[0]);
+    return '<div class="flag simple compact aggregate-flag'+(en?" en":"")+(used?" used":"")+'" data-aggregate="true" data-flag="'+key+'" data-sid="'+sid+'"><div class="ft">'+label+'</div></div>';
   }
   let pips="";
   if(!opt.noPips){
@@ -4353,6 +4380,7 @@ document.addEventListener("click", function(e){
   document.addEventListener("pointerdown", function(e){
     const flag=e.target.closest("[data-flag]");
     if(!flag) return;
+    if(flag.dataset.permanent==="true") return;
     if(e.target.closest("[data-adj],[data-pip]")) return;
     e.preventDefault();
     fired=false;
@@ -4360,7 +4388,7 @@ document.addEventListener("click", function(e){
     holdEl.classList.add("holding");
     holdT=setTimeout(function(){
       fired=true;
-      if(flag.getAttribute("data-i")!==null){ clearHold(); return; }
+      if(flag.getAttribute("data-i")!==null || flag.dataset.aggregate==="true"){ clearHold(); return; }
       const f=flagObj(flag);
       if(f.n>0){ f.n=0; f.used=[]; }
       else { f.n=1; f.used=[false]; }
@@ -4374,6 +4402,7 @@ document.addEventListener("click", function(e){
     const wasFired=fired;
     clearHold();
     if(wasFired || !flag) return;
+    if(flag.dataset.permanent==="true") return;
     if(e.target.closest("[data-adj],[data-pip]")) return;
     const f=flagObj(flag);
     if(!f || !f.n) return;
@@ -4981,7 +5010,7 @@ function relayOnMsg(raw){
     relaySend({type:"layout", open:net.openSeats||[]});
     relaySend({type:"occ", taken:taken, open:net.openSeats||[]});
   }
-  if(msg.type==="swap") applySwap(msg.a, msg.b, msg.lead, msg.turn);
+  if(msg.type==="swap") applySwap(msg.a, msg.b, msg.lead, msg.turn, msg.opId);
   if(msg.type==="boardEdit") applyRemoteBoardEdit(msg);
 }
 function netLog(s){
@@ -5087,18 +5116,31 @@ function swapBoard(a,b){
   const hasA=net.openSeats.indexOf(A)>=0, hasB=net.openSeats.indexOf(B)>=0;
   if(hasA && !hasB){ net.openSeats=net.openSeats.filter(function(x){return x!==A;}); net.openSeats.push(B); }
   else if(hasB && !hasA){ net.openSeats=net.openSeats.filter(function(x){return x!==B;}); net.openSeats.push(A); }
+  const pack={type:"swap", a:a, b:b, lead:net.lead, turn:net.turn, opId:"swap:"+net.uid+":"+Date.now()+":"+a+":"+b};
   net.conns.forEach(function(c){
-    if(c && c.open) try{ c.send({type:"swap", a:a, b:b, lead:net.lead, turn:net.turn}); }catch(e){}
+    if(c && c.open) try{ c.send(pack); }catch(e){}
   });
+  relaySend(pack);
   renderBoard();
   if(net.role==="host") hostBroadcastOcc();
 }
-function applySwap(a,b,lead,turn){
+function applySwap(a,b,lead,turn,opId){
+  net.appliedOps=net.appliedOps||{};
+  if(opId&&net.appliedOps[opId]) return;
+  if(opId){
+    net.appliedOps[opId]=Date.now();
+    Object.keys(net.appliedOps).forEach(function(key){if(Date.now()-net.appliedOps[key]>120000) delete net.appliedOps[key];});
+  }
+  const A=a+1, B=b+1;
+  net.pick=net.pick||{};
+  const pickA=net.pick[A], pickB=net.pick[B];
+  if(pickB!=null) net.pick[A]=pickB; else delete net.pick[A];
+  if(pickA!=null) net.pick[B]=pickA; else delete net.pick[B];
+  net.pickOrder=(net.pickOrder||[]).map(function(n){return n===A?B:n===B?A:n;});
   const seats=net.seats||[net.seat];
   net.seats=seats.map(function(s){
-    const i=s-1;
-    if(i===a) return b+1;
-    if(i===b) return a+1;
+    if(s===A) return B;
+    if(s===B) return A;
     return s;
   });
   net.seat=net.seats[0];
@@ -5111,44 +5153,59 @@ function bindBoardDrag(){
   if(net.role!=="host") return;
   const g=document.getElementById("boardGrid");
   if(!g) return;
-  let from=-1, timer=null, holding=false;
-  g.querySelectorAll(".bcard").forEach(function(card){
-    function start(e){
-      if(e.target.closest(".blead")) return;
-      const pos=parseInt(card.getAttribute("data-pos"),10);
-      holding=false; from=pos;
-      clearTimeout(timer);
+  g.querySelectorAll(".bcard:not(.empty)").forEach(function(card){
+    let timer=null, holding=false, pointerId=null, startX=0, startY=0, over=null;
+    function clearDrop(){ g.querySelectorAll(".bcard.drop").forEach(function(c){c.classList.remove("drop");}); }
+    function cancel(){
+      if(timer){ clearTimeout(timer); timer=null; }
+      holding=false; pointerId=null; over=null;
+      card.classList.remove("drag"); clearDrop();
+    }
+    function targetAt(x,y){
+      const el=document.elementFromPoint(x,y);
+      const next=el&&el.closest?el.closest(".bcard"):null;
+      return next&&!next.classList.contains("closed")&&next!==card?next:null;
+    }
+    card.addEventListener("pointerdown",function(e){
+      if(e.button!=null&&e.button!==0) return;
+      if(e.target.closest("button,a,input,select")) return;
+      pointerId=e.pointerId; startX=e.clientX; startY=e.clientY; holding=false; over=null;
+      if(card.setPointerCapture) try{card.setPointerCapture(pointerId);}catch(err){}
       timer=setTimeout(function(){
-        holding=true;
+        timer=null; holding=true; net._navLock=Date.now();
         card.classList.add("drag");
-      },700);
-    }
-    function move(e){
-      if(!holding) return;
-      const pt=e.touches?e.touches[0]:e;
-      const el=document.elementFromPoint(pt.clientX, pt.clientY);
-      const over=el && el.closest?el.closest(".bcard"):null;
-      g.querySelectorAll(".bcard").forEach(function(c){ c.classList.toggle("drop", !!(over && c===over && c!==card)); });
-    }
-    function end(e){
-      clearTimeout(timer);
-      card.classList.remove("drag");
-      const drops=g.querySelectorAll(".bcard.drop");
-      const over=drops[0];
-      g.querySelectorAll(".bcard").forEach(function(c){ c.classList.remove("drop"); });
-      if(holding && over){
-        const to=parseInt(over.getAttribute("data-pos"),10);
-        if(!isNaN(to)) swapBoard(from,to);
+        if(navigator.vibrate) navigator.vibrate(25);
+      },600);
+    });
+    card.addEventListener("pointermove",function(e){
+      if(pointerId!==e.pointerId) return;
+      if(!holding){
+        if(Math.abs(e.clientX-startX)>12||Math.abs(e.clientY-startY)>12) cancel();
+        return;
       }
-      holding=false; from=-1;
-    }
-    card.addEventListener("touchstart", start, {passive:true});
-    card.addEventListener("mousedown", start);
-    card.addEventListener("touchmove", move, {passive:true});
-    card.addEventListener("mousemove", move);
-    card.addEventListener("touchend", end);
-    card.addEventListener("mouseup", end);
-    card.addEventListener("mouseleave", function(){ if(!holding){ clearTimeout(timer); }});
+      e.preventDefault();
+      over=targetAt(e.clientX,e.clientY);
+      g.querySelectorAll(".bcard").forEach(function(c){c.classList.toggle("drop",c===over);});
+    },{passive:false});
+    card.addEventListener("pointerup",function(e){
+      if(pointerId!==e.pointerId) return;
+      if(timer){ clearTimeout(timer); timer=null; }
+      if(holding){
+        e.preventDefault(); net._navLock=Date.now();
+        over=targetAt(e.clientX,e.clientY)||over;
+        const from=parseInt(card.getAttribute("data-pos"),10);
+        const to=over?parseInt(over.getAttribute("data-pos"),10):-1;
+        card.classList.remove("drag"); clearDrop();
+        holding=false; pointerId=null;
+        if(to>=0&&to!==from) swapBoard(from,to);
+        return;
+      }
+      cancel();
+    });
+    card.addEventListener("pointercancel",cancel);
+    card.addEventListener("contextmenu",function(e){e.preventDefault();});
+    card.style.touchAction="none";
+    card.style.userSelect="none";
   });
 }
 function bindBoardEditButtons(){
@@ -5410,7 +5467,7 @@ function openMythPop(view, key, aoId){
   p.innerHTML=html;
 }
 function boardSig(){
-  try{ return JSON.stringify({b:net.board,l:net.lead,t:net.turn,o:net.openSeats}); }catch(e){ return ""; }
+  try{ return JSON.stringify({b:net.board,l:net.lead,t:net.turn,o:net.openSeats,r:net.role}); }catch(e){ return ""; }
 }
 let boardEditDraft=null;
 function boardDraftSkills(inv){
@@ -5436,8 +5493,12 @@ function paintBoardEditor(){
   let skillHtml="";
   SKILLS.forEach(function(sk){
     const values=d.skills[sk.id]||{gen:baseOf(inv,sk.id),extra:baseOf(inv,sk.id)};
-    skillHtml+='<div class="board-edit-skill"><span>'+sk.kr+'</span><button type="button" data-be-step="-1" data-be-skill="'+sk.id+'" data-be-part="gen">−</button><b>'+values.gen+'</b><button type="button" data-be-step="1" data-be-skill="'+sk.id+'" data-be-part="gen">+</button></div>';
-    if(sk.extra) skillHtml+='<div class="board-edit-skill"><span>'+sk.extra.kr+'</span><button type="button" data-be-step="-1" data-be-skill="'+sk.id+'" data-be-part="extra">−</button><b>'+values.extra+'</b><button type="button" data-be-step="1" data-be-skill="'+sk.id+'" data-be-part="extra">+</button></div>';
+    const extraLabel=sk.id==="str"?"힘 전투":sk.id==="will"?"의지 전투":(sk.extra&&sk.extra.kr);
+    const extraClass=sk.id==="str"?"str-cbt":sk.id==="will"?"will-cbt":(sk.extra&&sk.extra.id);
+    skillHtml+='<div class="board-edit-skill-row"><div class="board-edit-skill '+sk.id+'"><span>'+sk.kr+'</span><button type="button" data-be-step="-1" data-be-skill="'+sk.id+'" data-be-part="gen">−</button><b>'+values.gen+'</b><button type="button" data-be-step="1" data-be-skill="'+sk.id+'" data-be-part="gen">+</button></div>';
+    if(sk.extra) skillHtml+='<div class="board-edit-skill '+extraClass+'"><span>'+extraLabel+'</span><button type="button" data-be-step="-1" data-be-skill="'+sk.id+'" data-be-part="extra">−</button><b>'+values.extra+'</b><button type="button" data-be-step="1" data-be-skill="'+sk.id+'" data-be-part="extra">+</button></div>';
+    else skillHtml+='<div class="board-edit-skill ph" aria-hidden="true"></div>';
+    skillHtml+='</div>';
   });
   pop.innerHTML='<div class="board-edit-head"><h3>'+(d.seat)+'번 플레이어 편집</h3><button type="button" data-be-close>닫기</button></div><div class="board-edit-fields"><label>조사자<select id="boardEditInv">'+invOptions+'</select></label><label>위치<select id="boardEditLoc">'+locOptions+'</select></label></div><div class="board-edit-skills">'+skillHtml+'</div><div class="board-edit-actions"><button type="button" data-be-close>취소</button><button type="button" class="save" data-be-save>플레이어에게 적용</button></div>';
   pop.hidden=false;
@@ -5574,7 +5635,10 @@ function renderBoard(){
       const x=(d.skills&&d.skills[sk.id])||{};
       html+='<div class="brow">';
       html+='<div class="bp '+sk.id+'"><span>'+sk.kr+'</span><b>'+(x.gen??"—")+'</b></div>';
-      if(sk.extra) html+='<div class="bp '+sk.extra.id+'"><span>'+sk.extra.kr+'</span><b>'+(x.extra??"—")+'</b></div>';
+      if(sk.extra){
+        const boardExtraLabel=sk.id==="str"?"힘 전투":sk.id==="will"?"의지 전투":sk.extra.kr;
+        html+='<div class="bp '+sk.extra.id+'"><span>'+boardExtraLabel+'</span><b>'+(x.extra??"—")+'</b></div>';
+      }
       else html+='<div class="bp ph" aria-hidden="true"></div>';
       html+='</div>';
     });
@@ -5664,6 +5728,7 @@ function renderBoard(){
     btn.onmouseup=cancel; btn.onmouseleave=cancel;
     btn.onclick=function(e){ e.preventDefault(); };
   });
+  bindBoardDrag();
   bindBoardEditButtons();
   const m=document.getElementById("mythosMsg");
   if(m) m.classList.toggle("on", !!net.needNewLead);
@@ -5876,7 +5941,7 @@ function finishJoinWithPicks(){
       }
       if(msg.type==="ok"){ net.claimed=true; publishSnap(); startSnapBeat(); }
       if(msg.type==="lead") applyRemoteLead(msg.seat||0, msg.turn);
-      if(msg.type==="swap") applySwap(msg.a, msg.b, msg.lead, msg.turn);
+      if(msg.type==="swap") applySwap(msg.a, msg.b, msg.lead, msg.turn, msg.opId);
       if(msg.type==="boardEdit") applyRemoteBoardEdit(msg);
     });
     conn.on("error", function(err){ setRoomSt("P2P 오류 "+((err&&err.type)||"")); });
@@ -6480,10 +6545,15 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     else { const q=rqOf(), sixExtra=q.sixBonus?dice.values.filter(function(v){return v===6;}).length:0; diceOverlay={rollId:dice.rollId,openedAt:dice.openedAt,label:dice.label,context:dice.context,baseCount:dice.baseCount,modifier:dice.count-dice.baseCount,count:dice.count,values:dice.values.slice(),successes:successTotal(),sixExtra:sixExtra,mode:q.mode,rolling:dice.rolling,shattered:!!dice.shattered,celebrating:!!dice.celebrating,perfectLevel:dice.perfectLevel||0,narrative:narrativeData()}; }
     publishSnap();
   }
+  function baseSkillLabel(){
+    const skill=SKILLS.find(function(item){return item.id===dice.sid;});
+    return skill?skill.kr:dice.label;
+  }
   function actionInfo(type){
     const slot=state(), sk=slot.skills[dice.sid];
-    if(type==="skill-reroll") return {owner:sk,key:"reroll",mode:"reroll",label:dice.label+" 리롤"};
-    if(type==="skill-plus1") return {owner:sk,key:"plus1",mode:"plus1",label:dice.label+" +1"};
+    const skillLabel=baseSkillLabel();
+    if(type==="skill-reroll") return {owner:sk,key:"reroll",mode:"reroll",label:skillLabel+" 리롤"};
+    if(type==="skill-plus1") return {owner:sk,key:"plus1",mode:"plus1",label:skillLabel+" +1"};
     if(type==="round-rr") return {owner:slot,key:"rr",mode:"reroll",label:"라운드 리롤"};
     if(type==="round-p1") return {owner:slot,key:"p1",mode:"plus1",label:"라운드 +1"};
     if(type==="round-ring") return {owner:slot,key:"ring",mode:"reroll",label:"행운의 반지"};
@@ -6524,29 +6594,19 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   }
   function paintActions(){
     const slot=state(), sk=slot.skills[dice.sid]||{};
+    const skillLabel=baseSkillLabel();
     const conditionalActions=(dice.condReroll&&dice.condReroll.n?actionButton("cond-reroll",contextLabel(dice.context)+" 리롤",unused(dice.condReroll)):"")+
       (dice.condPlus1&&dice.condPlus1.n?actionButton("cond-plus1",contextLabel(dice.context)+" +1",unused(dice.condPlus1)):"");
     actions.innerHTML=
-      actionButton("skill-reroll",dice.label+" 리롤",unused(sk.reroll))+
-      actionButton("skill-plus1",dice.label+" +1",unused(sk.plus1))+
+      actionButton("skill-reroll",skillLabel+" 리롤",unused(sk.reroll))+
+      actionButton("skill-plus1",skillLabel+" +1",unused(sk.plus1))+
       actionButton("round-rr","라운드 리롤",unused(slot.rr))+
       actionButton("round-arr","전체 리롤",unused(slot.arr))+
       actionButton("round-p1","라운드 +1",unused(slot.p1))+
       actionButton("round-ring","행운의 반지",unused(slot.ring))+
       conditionalActions;
-    paintSummary();
-  }
-  function paintSummary(){
-    const slot=state(), sk=slot.skills[dice.sid]||{}, c=dice.conditional||{dice:0,reroll:0,plus1:0};
-    document.getElementById("diceSummary").innerHTML=
-      '<span class="dice-chip">현재 주사위 <strong id="diceCurrent">'+dice.count+'</strong></span>'+
-      '<span class="dice-chip">상시 추가 <strong>'+dice.permanentAdded+'</strong></span>'+
-      '<span class="dice-chip condition-chip">조건 추가 <strong>'+c.dice+'</strong></span>'+
-      '<span class="dice-chip">리롤 <strong>'+(unused(sk.reroll)+unused(slot.rr)+unused(dice.condReroll))+'</strong></span>'+
-      '<span class="dice-chip">+1 <strong>'+(unused(sk.plus1)+unused(slot.p1)+unused(dice.condPlus1))+'</strong></span>';
   }
   function paintCountAdjust(){
-    paintSummary();
     countValue.textContent=dice.count+"개";
     document.getElementById("diceTitle").textContent=dice.label+" · "+dice.count+"개";
     countAdjust.querySelector('[data-dice-count="-1"]').disabled=dice.count<=0;
@@ -6694,7 +6754,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260920-c";
+const APP_VER="20260921-d";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;

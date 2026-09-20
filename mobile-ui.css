@@ -113,9 +113,6 @@ body.mobile-ui #appVerLab { padding:10px 4px 4px !important; border-top:1px soli
   border:1px solid var(--line); color:var(--cream); background:var(--btn); font-weight:800;
 }
 .dice-close { min-width:58px; height:40px; border-radius:10px; }
-.dice-summary { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 9px; }
-.dice-chip { padding:5px 8px; border:1px solid var(--line); border-radius:999px; color:var(--muted); background:rgba(0,0,0,.18); font-size:11px; }
-.dice-chip strong { color:var(--gold2); font-size:13px; }
 .dice-count-adjust { display:flex; align-items:center; justify-content:center; gap:8px; margin:0 0 10px; color:var(--muted); font-size:12px; font-weight:800; }
 .dice-count-adjust button { width:34px; height:34px; border:1px solid var(--line); border-radius:9px; color:var(--cream); background:var(--btn); font-size:20px; font-weight:900; }
 .dice-count-adjust button:disabled { opacity:.35; }
@@ -168,7 +165,7 @@ body.round-cursed #stage,body.round-cursed .dice-sheet { box-shadow:0 0 28px rgb
 @media(min-width:700px){ .dice-modal{place-items:center}.dice-sheet{padding:20px}.dice-stage{min-height:250px} }
 @media(max-height:620px){
   .dice-modal{padding:5px}.dice-sheet{max-height:calc(100dvh - 10px);padding:11px;border-radius:14px}
-  .dice-stage{min-height:145px}.dice-summary{margin:7px 0}.dice-help{display:none}.dice-result{padding-top:6px}
+  .dice-stage{min-height:145px}.dice-help{display:none}.dice-result{padding-top:6px}
 }
 
 /* Dense mobile sheet: fit all five skills into the available viewport. */
@@ -788,6 +785,39 @@ body.round-blessed.mobile-ui #stage .flag[data-flag="success"] .ft {
 body.round-blessed.mobile-ui #stage .flag[data-flag="ring"] .ft {
   color:#40531F !important; border-color:#738348 !important; background:#E0E7C9 !important;
 }
+/* Saved context-only bonuses are status labels in the skill header. */
+#stage .aggregate-flag .ft {
+  font-weight:850 !important;
+  border-radius:999px !important;
+  box-shadow:inset 0 0 0 1px #ffffff12 !important;
+}
+#stage .aggregate-flag[data-flag="reroll"] .ft,
+#stage .aggregate-flag[data-flag="rr"] .ft { color:#ccecf5 !important; border-color:#58899a !important; background:#203b45 !important; }
+#stage .aggregate-flag[data-flag="arr"] .ft { color:#ead9f4 !important; border-color:#8a68a0 !important; background:#382947 !important; }
+#stage .aggregate-flag[data-flag="plus1"] .ft,
+#stage .aggregate-flag[data-flag="p1"] .ft { color:#ffe6a4 !important; border-color:#a77e2d !important; background:#483613 !important; }
+#stage .aggregate-flag[data-flag="success"] .ft { color:#ffd6cd !important; border-color:#a45c4f !important; background:#482724 !important; }
+#stage .aggregate-flag[data-flag="ring"] .ft { color:#dce9b9 !important; border-color:#778d48 !important; background:#303d1d !important; }
+#stage .aggregate-flag.permanent-flag { cursor:default; }
+#stage .aggregate-flag.permanent-flag .ft { opacity:1 !important; filter:none !important; }
+#stage .aggregate-flag.used .ft { filter:saturate(.35); opacity:.56 !important; }
+#stage .skill-head .condition-flag { pointer-events:none; }
+#stage .skill-head .condition-flag .ft {
+  color:#f2e8ce !important;
+  border-color:#8c7650 !important;
+  background:#33291d !important;
+  box-shadow:inset 0 0 0 1px #ffffff12 !important;
+}
+#stage .skill-head .condition-flag.scope-magic .ft { color:#e2d0ff !important; border-color:#8065aa !important; background:#35274b !important; }
+#stage .skill-head .condition-flag.scope-combat .ft { color:#ffd4cd !important; border-color:#a65b50 !important; background:#4a2624 !important; }
+#stage .skill-head .condition-flag.scope-asset .ft { color:#ffe8a8 !important; border-color:#a88130 !important; background:#493916 !important; }
+#stage .skill-head .condition-flag.scope-research .ft { color:#cdebd7 !important; border-color:#4f8d68 !important; background:#203c2b !important; }
+#stage .skill-head .condition-flag.scope-gate .ft { color:#d8dcff !important; border-color:#6674a9 !important; background:#29304d !important; }
+body.round-blessed.mobile-ui #stage .skill-head .condition-flag.scope-magic .ft { color:#573b74 !important; border-color:#9d83b5 !important; background:#eee5f4 !important; }
+body.round-blessed.mobile-ui #stage .skill-head .condition-flag.scope-combat .ft { color:#7c332b !important; border-color:#b77b70 !important; background:#f3ddd7 !important; }
+body.round-blessed.mobile-ui #stage .skill-head .condition-flag.scope-asset .ft { color:#6b4b06 !important; border-color:#b89446 !important; background:#f5e7bd !important; }
+body.round-blessed.mobile-ui #stage .skill-head .condition-flag.scope-research .ft { color:#24583c !important; border-color:#7aa58a !important; background:#dfede3 !important; }
+body.round-blessed.mobile-ui #stage .skill-head .condition-flag.scope-gate .ft { color:#394d79 !important; border-color:#8493bc !important; background:#e3e7f3 !important; }
 body.round-blessed.mobile-ui #stage .flag.used .ft {
   color:#FFFFFF !important;
   background:#40515B !important;
@@ -967,7 +997,6 @@ body.round-cursed .dice-grid.celebrating .dice-face.six-bonus::after,
 .dice-context > span { width:100%; color:var(--muted); font-size:11px; font-weight:800; text-align:center; }
 .dice-context button { min-height:34px; padding:5px 9px; border:1px solid var(--line); border-radius:999px; color:var(--cream); background:var(--btn); font-size:11px; font-weight:900; }
 .dice-context button.on { color:#211607; border-color:var(--gold2); background:var(--gold2); box-shadow:0 0 10px color-mix(in srgb,var(--gold2) 55%,transparent); }
-.dice-chip.condition-chip strong { color:#e7c65e; }
 body.round-blessed .condition-add select,
 body.round-blessed .condition-add button,
 body.round-blessed .condition-row,
