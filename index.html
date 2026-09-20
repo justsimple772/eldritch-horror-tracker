@@ -2260,6 +2260,55 @@
     background:linear-gradient(145deg,#241914,#100d0c 72%); border:1px solid #b58a43; border-radius:12px;
     padding:12px; overflow:auto; box-shadow:0 18px 44px rgba(0,0,0,.52);
   }
+  .board-edit-pop {
+    position:absolute; inset:42px 10px 10px; z-index:12;
+    background:linear-gradient(145deg,#241914,#100d0c 72%);
+    border:1px solid #b58a43; border-radius:12px;
+    padding:12px; overflow:auto; box-shadow:0 18px 44px rgba(0,0,0,.68);
+    color:#fff3d9;
+  }
+  .board-edit-pop[hidden] { display:none !important; }
+  .board-edit-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+  .board-edit-head h3 { margin:0; font-size:20px; color:#ffe4a8; }
+  .board-edit-head button { min-height:38px; padding:6px 14px; }
+  .board-edit-fields { display:grid; grid-template-columns:minmax(180px,1fr) minmax(180px,1fr); gap:10px; }
+  .board-edit-fields label { display:flex; flex-direction:column; gap:5px; font-size:13px; font-weight:800; color:#ead6ad; }
+  .board-edit-fields select {
+    width:100%; min-height:42px; border:1px solid #9b7438; border-radius:7px;
+    background:#19120f; color:#fff8e8; padding:7px 9px; font-size:15px; font-weight:700;
+  }
+  .board-edit-skills { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; margin-top:10px; }
+  .board-edit-skill {
+    display:grid; grid-template-columns:minmax(64px,1fr) 40px 54px 40px;
+    align-items:center; gap:5px; min-height:44px; padding:5px 7px;
+    background:rgba(255,255,255,.055); border:1px solid rgba(207,165,87,.42); border-radius:8px;
+  }
+  .board-edit-skill span { font-size:13px; font-weight:800; color:#fff0ca; }
+  .board-edit-skill b { text-align:center; font-size:22px; color:#fff; }
+  .board-edit-skill button { min-width:40px; min-height:36px; padding:0; font-size:20px; }
+  .board-edit-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
+  .board-edit-actions button { min-height:42px; min-width:92px; font-weight:800; }
+  .board-edit-actions .save { background:#b58a43; color:#160f0b; border-color:#e0ba70; }
+  .bcard.edit-holding { outline:3px solid #f4cf81 !important; filter:brightness(1.18); }
+  .board .bedit {
+    order:3; flex:0 0 30px;
+    width:30px; min-width:30px; height:30px; padding:0;
+    border:1px solid #b58a43; border-radius:7px;
+    background:#211812; color:#ffe4a8; font-size:15px; font-weight:800;
+  }
+  @media (max-width:760px), (max-height:520px) {
+    .board-edit-pop { inset:34px 6px 6px; padding:9px; }
+    .board-edit-head { margin-bottom:7px; }
+    .board-edit-head h3 { font-size:16px; }
+    .board-edit-fields { grid-template-columns:1fr 1fr; gap:7px; }
+    .board-edit-fields select { min-height:36px; font-size:13px; }
+    .board-edit-skills { grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; margin-top:7px; }
+    .board-edit-skill { grid-template-columns:minmax(54px,1fr) 34px 42px 34px; min-height:36px; padding:3px 5px; }
+    .board-edit-skill b { font-size:18px; }
+    .board-edit-skill button { min-width:32px; min-height:30px; font-size:17px; }
+    .board-edit-actions { margin-top:7px; }
+    .board-edit-actions button { min-height:34px; }
+  }
   .mythpop-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 0 10px; }
   .mythpop h4 { margin:0; color:#ffe0a0; font-size:16px; letter-spacing:.02em; }
   .mythpop .mback { margin:0 0 10px; min-height:40px; padding:7px 12px; }
@@ -3052,7 +3101,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260920-a">
+<link rel="stylesheet" href="mobile-ui.css?v=20260920-c">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -3149,6 +3198,7 @@
   <div class="mythos" id="mythosBar">신화 단계 시행 후 새로운 대표 조사자를 정해주십시오.<button type="button" class="mythos-x" data-mythos-x aria-label="닫고 이전 조사자">×</button></div>
   <div class="mythos" id="mythosMsg">신화 단계 시행 후 새로운 대표 조사자를 정해주십시오.<button type="button" class="mythos-x" data-mythos-x aria-label="닫고 이전 조사자">×</button></div>
   <div class="bgrid" id="boardGrid"></div>
+  <div class="board-edit-pop" id="boardEditPop" hidden></div>
   <div class="board-dice" id="boardDiceOverlay" hidden></div>
   <button type="button" class="bd-reopen" id="boardDiceReopen" hidden>닫은 결과 보기</button>
 </div>
@@ -3496,7 +3546,7 @@ const INV = [
   {id:"sefina", kr:"세피나 루소", en:"Sefina Rousseau", file:"Sefina_Rousseau", job:"화가", set:"나이알라토텝의 가면", hp:4,san:8,lore:3,inf:2,obs:4,str:1,will:3}
 ];
 
-const PORTRAITS={akachi:"img/akachi.jpg",charlie:"img/charlie.jpg",diana:"img/diana.jpg",jacqueline:"img/jacqueline.jpg",jim:"img/jim.jpg",leo:"img/leo.jpg",lily:"img/lily.jpg",lola:"img/lola.jpg",mark:"img/mark.jpg",norman:"img/norman.jpg",silas:"img/silas.jpg",trish:"img/trish.jpg",agnes:"img/agnes.jpg",daisy:"img/daisy.jpg",finn:"img/finn.jpg",george:"img/george.jpg",patrice:"img/patrice.jpg",tommy:"img/tommy.jpg",ursula:"img/ursula.jpg",wilson:"img/wilson.jpg",marie:"img/marie.jpg",skids:"img/skids.jpg",tony:"img/tony.jpg",zoey:"img/zoey.jpg",hank:"img/hank.jpg",harvey:"img/harvey.jpg",joe:"img/joe.jpg",mandy:"img/mandy.jpg",minh:"img/minh.jpg",monterey:"img/monterey.jpg",rex:"img/rex.jpg",mary:"img/mary.jpg",jenny:"img/jenny.jpg",dexter:"img/dexter.jpg",michael:"img/michael.jpg",wendy:"img/wendy.jpg",amanda:"img/amanda.jpg",carolyn:"img/carolyn.jpg",darrell:"img/darrell.jpg",gloria:"img/gloria.jpg",kate:"img/kate.jpg",luke:"img/luke.jpg",vincent:"img/vincent.jpg",william:"img/william.jpg",ashcan:"img/ashcan.jpg",bob:"img/bob.jpg",rita:"img/rita.jpg",roland:"img/roland.jpg",agatha:"img/agatha.jpg",calvin:"img/calvin.jpg",carson:"img/carson.jpg",daniela:"img/daniela.jpg",mateo:"img/mateo.jpg",preston:"img/preston.jpg",sefina:"img/sefina.jpg"};
+const PORTRAITS=Object.fromEntries(INV.map(function(inv){ return [inv.id,"img-original/"+inv.id+".webp"]; }));
 
 function artUrls(inv){
   const n = inv.file;
@@ -3530,8 +3580,9 @@ function loadArt(imgEl, phEl, inv){
   imgEl.style.display="none";
   const fallback = PORTRAITS[inv.id] || "";
   const online = (typeof navigator==="undefined") || navigator.onLine !== false;
-  const urls = online ? artUrls(inv).slice() : [];
+  const urls = [];
   if(fallback) urls.push(fallback);
+  if(online) urls.push.apply(urls,artUrls(inv));
   let i = 0;
   const tryNext = function(){
     if(i>=urls.length){
@@ -4097,9 +4148,10 @@ function render(){
   document.getElementById("note").value=state().note||"";
   applyScale();
 }
-function applyInv(inv){
-  state().invId=inv.id;
-  state().skills={
+function applyInvToSlot(slot,inv){
+  if(!slot||!inv) return;
+  slot.invId=inv.id;
+  slot.skills={
     lore:{ val:inv.lore, gen:inv.lore, spl:inv.lore, reroll:emptyFlag(), plus1:emptyFlag(), success:emptyFlag() },
     inf:{ val:inv.inf, gen:inv.inf, acq:inv.inf, reroll:emptyFlag(), plus1:emptyFlag(), jewelry:emptyFlag(), success:emptyFlag() },
     obs:{ val:inv.obs, gen:inv.obs, reroll:emptyFlag(), plus1:emptyFlag(), success:emptyFlag() },
@@ -4107,6 +4159,7 @@ function applyInv(inv){
     will:{ val:inv.will, gen:inv.will, cbt:inv.will, reroll:emptyFlag(), plus1:emptyFlag(), success:emptyFlag() }
   };
 }
+function applyInv(inv){ applyInvToSlot(state(),inv); }
 function visibleParts(id){
   const sk=SKILLS.find(function(x){return x.id===id;});
   const p=["gen"]; if(sk.extra) p.push(sk.extra.id); return p;
@@ -4929,6 +4982,7 @@ function relayOnMsg(raw){
     relaySend({type:"occ", taken:taken, open:net.openSeats||[]});
   }
   if(msg.type==="swap") applySwap(msg.a, msg.b, msg.lead, msg.turn);
+  if(msg.type==="boardEdit") applyRemoteBoardEdit(msg);
 }
 function netLog(s){
   try{ console.log("[eh]", s); }catch(e){}
@@ -5095,6 +5149,18 @@ function bindBoardDrag(){
     card.addEventListener("touchend", end);
     card.addEventListener("mouseup", end);
     card.addEventListener("mouseleave", function(){ if(!holding){ clearTimeout(timer); }});
+  });
+}
+function bindBoardEditButtons(){
+  if(net.role!=="host") return;
+  const g=document.getElementById("boardGrid");
+  if(!g) return;
+  g.querySelectorAll("[data-board-edit]").forEach(function(btn){
+    btn.onclick=function(e){
+      e.preventDefault(); e.stopPropagation();
+      net._navLock=Date.now();
+      openBoardEditor(parseInt(btn.getAttribute("data-board-edit"),10));
+    };
   });
 }
 function ringOrder(){
@@ -5346,6 +5412,131 @@ function openMythPop(view, key, aoId){
 function boardSig(){
   try{ return JSON.stringify({b:net.board,l:net.lead,t:net.turn,o:net.openSeats}); }catch(e){ return ""; }
 }
+let boardEditDraft=null;
+function boardDraftSkills(inv){
+  const out={};
+  SKILLS.forEach(function(sk){
+    const base=baseOf(inv,sk.id);
+    out[sk.id]={gen:base};
+    if(sk.extra) out[sk.id].extra=base;
+  });
+  return out;
+}
+function closeBoardEditor(){
+  boardEditDraft=null;
+  const pop=document.getElementById("boardEditPop");
+  if(pop){ pop.hidden=true; pop.innerHTML=""; }
+}
+function paintBoardEditor(){
+  const pop=document.getElementById("boardEditPop"), d=boardEditDraft;
+  if(!pop||!d) return;
+  const inv=INV.find(function(x){return x.id===d.invId;})||INV[0];
+  const invOptions=INV.map(function(x){return '<option value="'+x.id+'"'+(x.id===d.invId?' selected':'')+'>'+x.kr+' · '+x.job+'</option>';}).join("");
+  const locOptions='<option value=""'+(!d.loc?' selected':'')+'>위치 없음</option>'+LOCS.map(function(x){return '<option value="'+x.id+'"'+(x.id===d.loc?' selected':'')+'>'+locFull(x)+'</option>';}).join("");
+  let skillHtml="";
+  SKILLS.forEach(function(sk){
+    const values=d.skills[sk.id]||{gen:baseOf(inv,sk.id),extra:baseOf(inv,sk.id)};
+    skillHtml+='<div class="board-edit-skill"><span>'+sk.kr+'</span><button type="button" data-be-step="-1" data-be-skill="'+sk.id+'" data-be-part="gen">−</button><b>'+values.gen+'</b><button type="button" data-be-step="1" data-be-skill="'+sk.id+'" data-be-part="gen">+</button></div>';
+    if(sk.extra) skillHtml+='<div class="board-edit-skill"><span>'+sk.extra.kr+'</span><button type="button" data-be-step="-1" data-be-skill="'+sk.id+'" data-be-part="extra">−</button><b>'+values.extra+'</b><button type="button" data-be-step="1" data-be-skill="'+sk.id+'" data-be-part="extra">+</button></div>';
+  });
+  pop.innerHTML='<div class="board-edit-head"><h3>'+(d.seat)+'번 플레이어 편집</h3><button type="button" data-be-close>닫기</button></div><div class="board-edit-fields"><label>조사자<select id="boardEditInv">'+invOptions+'</select></label><label>위치<select id="boardEditLoc">'+locOptions+'</select></label></div><div class="board-edit-skills">'+skillHtml+'</div><div class="board-edit-actions"><button type="button" data-be-close>취소</button><button type="button" class="save" data-be-save>플레이어에게 적용</button></div>';
+  pop.hidden=false;
+}
+function openBoardEditor(pos){
+  if(net.role!=="host") return;
+  const data=net.board[pos];
+  if(!data) return;
+  const inv=INV.find(function(x){return x.id===data.invId;})||INV[0];
+  const skills={};
+  SKILLS.forEach(function(sk){
+    const current=(data.skills&&data.skills[sk.id])||{};
+    skills[sk.id]={gen:clamp(current.gen==null?baseOf(inv,sk.id):current.gen,0,32)};
+    if(sk.extra) skills[sk.id].extra=clamp(current.extra==null?baseOf(inv,sk.id):current.extra,0,32);
+  });
+  boardEditDraft={pos:pos,seat:pos+1,uid:data.uid||"",invId:inv.id,loc:data.loc||"",skills:skills};
+  const myth=document.getElementById("mythPop"); if(myth) myth.hidden=true;
+  paintBoardEditor();
+}
+function hostApplyBoardEdit(draft){
+  if(net.role!=="host"||!draft) return;
+  const data=net.board[draft.pos];
+  if(!data) return;
+  const inv=INV.find(function(x){return x.id===draft.invId;});
+  if(!inv) return;
+  const patch={invId:inv.id,loc:draft.loc||"",skills:draft.skills};
+  data.invId=inv.id; data.name=inv.kr; data.job=inv.job; data.loc=patch.loc; data.skills=JSON.parse(JSON.stringify(patch.skills)); data.t=Date.now();
+  const msg={type:"boardEdit",targetUid:data.uid||draft.uid||"",seat:draft.seat,patch:patch};
+  net.conns.forEach(function(c){ if(c&&c.open) try{ c.send(msg); }catch(e){} });
+  relaySend(msg);
+  closeBoardEditor();
+  net._boardSig="";
+  renderBoard();
+  hostBroadcastOcc();
+}
+function slotSkillShown(slot,sk,part){
+  const d=(slot.skills&&slot.skills[sk.id])||{};
+  const success=(d.success&&d.success.n)||0;
+  if(part==="gen") return (d.gen||0)+(d.gear||0)+(pxBonus(slot,sk.id,"gen")||pxBonus(slot,sk.id,"val"))+success;
+  return (d[sk.extra.id]||0)+pxBonus(slot,sk.id,sk.extra.id)+success;
+}
+function applyBoardEditToSlot(slot,patch){
+  if(!slot||!patch) return;
+  const nextInv=INV.find(function(x){return x.id===patch.invId;});
+  if(nextInv&&slot.invId!==nextInv.id){ applyInvToSlot(slot,nextInv); slot.px=false; }
+  if(Object.prototype.hasOwnProperty.call(patch,"loc")) slot.loc=patch.loc||"";
+  SKILLS.forEach(function(sk){
+    const target=patch.skills&&patch.skills[sk.id];
+    if(!target) return;
+    const d=slot.skills[sk.id];
+    const wantedGen=clamp(target.gen,0,32);
+    let delta=wantedGen-slotSkillShown(slot,sk,"gen");
+    const next=clamp((d.val||0)+delta,0,12), actual=next-(d.val||0);
+    d.val=next;
+    visibleParts(sk.id).forEach(function(part){ d[part]=clamp((d[part]||0)+actual,Math.max(1,d.val),20); });
+    if(sk.extra&&target.extra!=null){
+      delta=clamp(target.extra,0,32)-slotSkillShown(slot,sk,"extra");
+      d[sk.extra.id]=clamp((d[sk.extra.id]||0)+delta,Math.max(1,d.val),20);
+    }
+  });
+}
+function applyRemoteBoardEdit(msg){
+  if(net.role!=="player"||!msg||!msg.patch) return false;
+  if(msg.targetUid&&msg.targetUid!==net.uid) return false;
+  const seat=clamp(msg.seat||1,1,8);
+  let slotIdx=-1;
+  if(net.pick&&net.pick[seat]!=null) slotIdx=net.pick[seat];
+  else {
+    const seats=net.seats||[];
+    const i=seats.indexOf(seat);
+    if(i>=0) slotIdx=Math.min(i,party.slots.length-1);
+    else if(net.seat===seat) slotIdx=party.active;
+  }
+  if(slotIdx<0||!party.slots[slotIdx]) return false;
+  applyBoardEditToSlot(party.slots[slotIdx],msg.patch);
+  localStorage.setItem(KEY,JSON.stringify(party));
+  render();
+  publishSnap();
+  return true;
+}
+document.getElementById("boardEditPop").addEventListener("change",function(e){
+  if(!boardEditDraft) return;
+  if(e.target.id==="boardEditLoc") boardEditDraft.loc=e.target.value||"";
+  if(e.target.id==="boardEditInv"){
+    boardEditDraft.invId=e.target.value;
+    const inv=INV.find(function(x){return x.id===boardEditDraft.invId;})||INV[0];
+    boardEditDraft.skills=boardDraftSkills(inv);
+    paintBoardEditor();
+  }
+});
+document.getElementById("boardEditPop").addEventListener("click",function(e){
+  if(e.target.closest("[data-be-close]")){ closeBoardEditor(); return; }
+  if(e.target.closest("[data-be-save]")){ hostApplyBoardEdit(boardEditDraft); return; }
+  const btn=e.target.closest("[data-be-step]");
+  if(!btn||!boardEditDraft) return;
+  const sid=btn.getAttribute("data-be-skill"), part=btn.getAttribute("data-be-part");
+  boardEditDraft.skills[sid][part]=clamp(boardEditDraft.skills[sid][part]+(+btn.getAttribute("data-be-step")),0,32);
+  paintBoardEditor();
+});
 function renderBoard(){
   paintMythCur();
   const g=document.getElementById("boardGrid");
@@ -5362,7 +5553,7 @@ function renderBoard(){
     const isTurn=net.turn===i;
     if(!d){
       const closed=!seatIsOpen(i+1);
-      html+='<div class="bcard empty'+(closed?" closed":"")+(isLead?" lead":"")+(isTurn?" turn":"")+'" data-pos="'+i+'" draggable="'+(net.role==="host"?"true":"false")+'"><div class="bhead"><div class="bno">'+(i+1)+'</div><div class="bwho"><div class="bn">'+(closed?"없음":("대기"+(isTurn?" · 차례":"")))+'</div></div></div><div class="bj">'+(closed?"자리 없음":"아직 입장 없음")+'</div>';
+      html+='<div class="bcard empty'+(closed?" closed":"")+(isLead?" lead":"")+(isTurn?" turn":"")+'" data-pos="'+i+'" draggable="false"><div class="bhead"><div class="bno">'+(i+1)+'</div><div class="bwho"><div class="bn">'+(closed?"없음":("대기"+(isTurn?" · 차례":"")))+'</div></div></div><div class="bj">'+(closed?"자리 없음":"아직 입장 없음")+'</div>';
       if(net.role==="host" && !closed) html+='<button type="button" class="blead" data-lead="'+i+'"><i class="fill"></i><span>'+(isLead?"대표":"대표 지정")+"</span></button>";
       html+="</div>";
       continue;
@@ -5370,12 +5561,13 @@ function renderBoard(){
     const L=locInfo(d.loc);
     const locTxt=L?locFull(L):"위치 없음";
     const locCls=L?(" t-"+(L.type||"city")):" t-none";
-    html+='<div class="bcard '+(d.mode==="blessed"?"blessed":d.mode==="cursed"?"cursed":"")+(isLead?" lead":"")+(isTurn?" turn":"")+'" draggable="'+(net.role==="host"?"true":"false")+'" data-pos="'+i+'">';
+    html+='<div class="bcard '+(d.mode==="blessed"?"blessed":d.mode==="cursed"?"cursed":"")+(isLead?" lead":"")+(isTurn?" turn":"")+'" draggable="false" data-pos="'+i+'">';
     html+='<div class="bhead">';
     html+='<div class="bno">'+(i+1)+'</div>';
     html+='<div class="bwho"><div class="bn">'+d.name+(isTurn?" · 차례":"")+'</div>';
     html+='<div class="bloc'+locCls+'">'+locTxt+'</div></div>';
     html+='<div class="bpic"><div class="ph">'+((d.name||"?").slice(0,2))+'</div><img alt="" data-bimg="'+(d.invId||"")+'"></div>';
+    if(net.role==="host") html+='<button type="button" class="bedit" data-board-edit="'+i+'" aria-label="'+d.name+' 편집">⚙</button>';
     html+='</div>';
     html+='<div class="bskills">';
     SKILLS.forEach(function(sk){
@@ -5472,7 +5664,7 @@ function renderBoard(){
     btn.onmouseup=cancel; btn.onmouseleave=cancel;
     btn.onclick=function(e){ e.preventDefault(); };
   });
-  bindBoardDrag();
+  bindBoardEditButtons();
   const m=document.getElementById("mythosMsg");
   if(m) m.classList.toggle("on", !!net.needNewLead);
   const nx=document.getElementById("boardNext");
@@ -5685,6 +5877,7 @@ function finishJoinWithPicks(){
       if(msg.type==="ok"){ net.claimed=true; publishSnap(); startSnapBeat(); }
       if(msg.type==="lead") applyRemoteLead(msg.seat||0, msg.turn);
       if(msg.type==="swap") applySwap(msg.a, msg.b, msg.lead, msg.turn);
+      if(msg.type==="boardEdit") applyRemoteBoardEdit(msg);
     });
     conn.on("error", function(err){ setRoomSt("P2P 오류 "+((err&&err.type)||"")); });
     conn.on("close", function(){ if(!net.claimed) setRoomSt("P2P 끊김"); });
@@ -5782,6 +5975,7 @@ document.getElementById("roomLeave").onclick=function(){
   }, 900);
 };
 document.getElementById("boardBack").onclick=function(){
+  closeBoardEditor();
   document.getElementById("board").classList.remove("on");
 };
 (function(){
@@ -6500,7 +6694,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260920-a";
+const APP_VER="20260920-c";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;
