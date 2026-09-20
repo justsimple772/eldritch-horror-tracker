@@ -945,3 +945,41 @@ body.round-cursed .dice-grid.celebrating .dice-face.six-bonus::after,
   background:#EEDAF6;
   box-shadow:0 0 9px #D795EEAA;
 }
+
+/* Conditional asset bonuses stay compact in skill settings and are activated
+   by the current test context in the dice window. */
+.condition-editor { margin-top:12px; padding-top:10px; border-top:1px solid var(--line); }
+.rqpop .box { max-height:min(90dvh,720px); overflow:auto; }
+.condition-editor h5 { margin:0 0 3px; color:var(--gold2); font-size:14px; }
+.condition-editor > p { margin:0 0 8px; color:var(--muted); font-size:11px; line-height:1.35; }
+.condition-add { display:grid; grid-template-columns:1fr 1fr auto; gap:5px; }
+.condition-add select,.condition-add button { min-width:0; height:38px; padding:0 7px; border:1px solid var(--line); border-radius:7px; color:var(--cream); background:var(--btn); font-weight:800; }
+.condition-list { display:grid; gap:5px; margin-top:7px; }
+.condition-empty { margin:4px 0 0 !important; padding:8px; border:1px dashed var(--line); border-radius:7px; text-align:center; }
+.condition-row { display:grid; grid-template-columns:minmax(0,1fr) 32px 22px 32px 32px; align-items:center; gap:4px; padding:5px; border:1px solid var(--line); border-radius:8px; background:color-mix(in srgb,var(--card) 82%,#000); }
+.condition-row span { min-width:0; display:flex; flex-direction:column; }
+.condition-row b { color:var(--cream); font-size:12px; }
+.condition-row small { color:var(--muted); font-size:10px; }
+.condition-row button { width:32px; height:32px; padding:0; border:1px solid var(--gold); border-radius:6px; color:var(--gold2); background:var(--btn); font-size:18px; font-weight:900; }
+.condition-row strong { color:var(--gold2); text-align:center; }
+.condition-row .condition-remove { color:#ffcdc4; border-color:#9b544b; background:#522a28; }
+.dice-context { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:5px; margin:5px 0 8px; }
+.dice-context > span { width:100%; color:var(--muted); font-size:11px; font-weight:800; text-align:center; }
+.dice-context button { min-height:34px; padding:5px 9px; border:1px solid var(--line); border-radius:999px; color:var(--cream); background:var(--btn); font-size:11px; font-weight:900; }
+.dice-context button.on { color:#211607; border-color:var(--gold2); background:var(--gold2); box-shadow:0 0 10px color-mix(in srgb,var(--gold2) 55%,transparent); }
+.dice-chip.condition-chip strong { color:#e7c65e; }
+body.round-blessed .condition-add select,
+body.round-blessed .condition-add button,
+body.round-blessed .condition-row,
+body.round-blessed .condition-row button { color:#233740; border-color:#91a8ae; background:#edf5f4; }
+body.round-blessed .condition-row small,
+body.round-blessed .condition-editor > p,
+body.round-blessed .dice-context > span { color:#536a70; }
+body.round-blessed .dice-context button { color:#30464d; border-color:#9eb1b5; background:#e8f0ef; }
+body.round-blessed .dice-context button.on { color:#27383d; border-color:#c5a94b; background:#f4e8a8; }
+@media (max-width:420px){
+  .dice-context { gap:4px; }
+  .dice-context button { padding:5px 7px; font-size:10px; }
+  .condition-add { grid-template-columns:1fr 1fr; }
+  .condition-add button { grid-column:1 / -1; }
+}

@@ -3052,7 +3052,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260915-y">
+<link rel="stylesheet" href="mobile-ui.css?v=20260920-a">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -3174,6 +3174,7 @@
     </header>
     <div class="dice-narrative" id="diceNarrative" hidden aria-live="polite"></div>
     <section id="diceHistory" class="dice-history" role="dialog" aria-modal="true" aria-label="주사위 기록" hidden><header><h2>주사위 기록</h2><button type="button" class="dice-close" id="diceHistoryClose">돌아가기</button></header><p id="diceHistoryNotice">이 기기에 저장된 기록 · 최신순</p><div id="diceHistoryList"></div></section><div class="dice-summary" id="diceSummary"></div>
+    <div class="dice-context" id="diceContext" role="group" aria-label="이번 판정 상황"></div>
     <div class="dice-count-adjust" aria-label="이번 판정 주사위 개수 조절">
       <span>이번 판정</span>
       <button type="button" data-dice-count="-1" aria-label="주사위 1개 줄이기">−</button>
@@ -3405,6 +3406,38 @@ const SKILLS = [
   { id:"str",  kr:"힘", en:"Strength", extra:{id:"cbt", kr:"전투"} },
   { id:"will", kr:"의지", en:"Will", extra:{id:"cbt", kr:"전투"} }
 ];
+const TEST_CONTEXTS = [
+  {id:"general", label:"일반"},
+  {id:"magic", label:"마법"},
+  {id:"combat", label:"전투"},
+  {id:"asset", label:"자산"},
+  {id:"research", label:"조사 조우"},
+  {id:"gate", label:"차원문 조우"}
+];
+const CONDITIONAL_EFFECTS = [
+  {id:"dice", label:"주사위 +"},
+  {id:"reroll", label:"리롤"},
+  {id:"plus1", label:"눈금 +1"}
+];
+function specialContextForSkill(sid){
+  const sk=SKILLS.find(function(item){return item.id===sid;});
+  if(!sk||!sk.extra) return null;
+  return sk.extra.id==="spl"?"magic":sk.extra.id==="acq"?"asset":sk.extra.id==="cbt"?"combat":null;
+}
+function contextsForSkill(sid){
+  const ids=["general"], special=specialContextForSkill(sid);
+  if(special) ids.push(special);
+  ids.push("research","gate");
+  return TEST_CONTEXTS.filter(function(item){return ids.includes(item.id);});
+}
+function conditionScopesForSkill(sid){
+  const sk=SKILLS.find(function(item){return item.id===sid;})||{kr:"기술",extra:null};
+  const special=specialContextForSkill(sid);
+  const out=[];
+  if(special) out.push({id:special,label:sk.extra.kr+"에서만"});
+  out.push({id:"research",label:"조사 조우에서만"},{id:"gate",label:"차원문 조우에서만"});
+  return out;
+}
 const INV = [
   {id:"akachi", kr:"아카치 오넬레", en:"Akachi Onyele", file:"Akachi_Onyele", job:"주술사", set:"본판", hp:5,san:7,lore:3,inf:2,obs:2,str:2,will:4},
   {id:"charlie", kr:"찰리 케인", en:"Charlie Kane", file:"Charlie_Kane", job:"정치가", set:"본판", hp:4,san:8,lore:2,inf:4,obs:3,str:2,will:2},
@@ -3747,7 +3780,23 @@ function rqOf(){
 function sqOf(sid){
   const s=state().skills[sid];
   if(!s.spec) s.spec={reroll:0,plus1:0,success:0};
+  if(!Array.isArray(s.spec.conditional)) s.spec.conditional=[];
+  const scopes=conditionScopesForSkill(sid);
+  s.spec.conditional=s.spec.conditional.filter(function(item){
+    return item&&scopes.some(function(x){return x.id===item.scope;})&&CONDITIONAL_EFFECTS.some(function(x){return x.id===item.effect;})&&(item.count|0)>0;
+  }).map(function(item){return {scope:item.scope,effect:item.effect,count:clamp(item.count|0,1,8)};});
   return s.spec;
+}
+function conditionEditorHtml(q,sid){
+  const scopes=conditionScopesForSkill(sid);
+  const sk=SKILLS.find(function(item){return item.id===sid;})||{kr:"기술",extra:null};
+  const hint="위쪽 특수 버튼은 이 기술 전체에 공통 적용됩니다. 아래에는 특정 칸이나 조우에서만 쓰는 보정만 등록하세요.";
+  const list=q.conditional.map(function(item,i){
+    const scope=(scopes.find(function(x){return x.id===item.scope;})||{}).label||item.scope;
+    const effect=(CONDITIONAL_EFFECTS.find(function(x){return x.id===item.effect;})||{}).label||item.effect;
+    return '<div class="condition-row" data-cond-index="'+i+'"><span><b>'+scope+'</b><small>'+effect+'</small></span><button type="button" data-cond-step="-1" aria-label="개수 줄이기">−</button><strong>'+item.count+'</strong><button type="button" data-cond-step="1" aria-label="개수 늘리기">+</button><button type="button" class="condition-remove" data-cond-remove aria-label="조건부 보정 삭제">×</button></div>';
+  }).join("")||'<p class="condition-empty">등록된 조건부 보정이 없습니다.</p>';
+  return '<section class="condition-editor"><h5>특정 상황 전용 보정</h5><p>'+hint+'</p><div class="condition-add"><select id="condScope" aria-label="적용 범위">'+scopes.map(function(x){return '<option value="'+x.id+'">'+x.label+'</option>';}).join("")+'</select><select id="condEffect" aria-label="보정 종류">'+CONDITIONAL_EFFECTS.map(function(x){return '<option value="'+x.id+'">'+x.label+'</option>';}).join("")+'</select><button type="button" id="condAdd">등록</button></div><div class="condition-list">'+list+'</div></section>';
 }
 function paintSkillFlags(sid){
   const s=state().skills[sid], q=sqOf(sid);
@@ -3775,6 +3824,7 @@ function openSqPop(sid){
     [["reroll","리롤"],["plus1","+1"],["success","추가 주사위"]].map(function(x){
       return '<div class="row" data-sk="1" data-k="'+x[0]+'"><button type="button" data-d="-1">−</button><span>'+x[1]+'</span><b>'+(q[x[0]]||0)+'</b><button type="button" data-d="1">+</button></div>';
     }).join("")+
+    conditionEditorHtml(q,sid)+
     '<button type="button" id="sqOk" style="width:100%;margin-top:10px">확인</button></div>';
 }
 function paintRoundFlags(){
@@ -4182,6 +4232,29 @@ document.getElementById("rqPop").addEventListener("click", function(e){
   if(e.target.id==="sqOk"){
     document.getElementById("rqPop").hidden=true;
     save();
+    return;
+  }
+  if(e.target.id==="condAdd"){
+    const sid=this.dataset.sid, q=sqOf(sid);
+    const scope=document.getElementById("condScope").value;
+    const effect=document.getElementById("condEffect").value;
+    const found=q.conditional.find(function(item){return item.scope===scope&&item.effect===effect;});
+    if(found) found.count=clamp(found.count+1,1,8);
+    else q.conditional.push({scope:scope,effect:effect,count:1});
+    localStorage.setItem(KEY,JSON.stringify(party));
+    openSqPop(sid);
+    return;
+  }
+  const conditionRow=e.target.closest("[data-cond-index]");
+  if(conditionRow && (e.target.closest("[data-cond-step]")||e.target.closest("[data-cond-remove]"))){
+    const sid=this.dataset.sid, q=sqOf(sid), i=+conditionRow.dataset.condIndex;
+    if(e.target.closest("[data-cond-remove]")) q.conditional.splice(i,1);
+    else {
+      q.conditional[i].count=clamp(q.conditional[i].count+(+e.target.closest("[data-cond-step]").dataset.condStep),0,8);
+      if(!q.conditional[i].count) q.conditional.splice(i,1);
+    }
+    localStorage.setItem(KEY,JSON.stringify(party));
+    openSqPop(sid);
     return;
   }
   const row=e.target.closest(".row");
@@ -5335,7 +5408,13 @@ function renderBoard(){
   if(reopen){
     reopen.hidden=!dismissedEntries.length;
     reopen.textContent="닫은 결과 "+dismissedEntries.length+"개 보기";
-    reopen.onclick=function(){ const key=dismissedEntries[dismissedEntries.length-1]; boardDiceDismissed.delete(key); boardDiceCurrent=key; renderBoard(); };
+    reopen.onclick=function(){
+      const key=dismissedEntries[dismissedEntries.length-1];
+      boardDiceDismissed.delete(key);
+      boardDiceCurrent=key;
+      net._boardSig="";
+      renderBoard();
+    };
   }
   if(die){
     if(active&&active.dice){
@@ -5355,9 +5434,15 @@ function renderBoard(){
       const total=Number.isFinite(x.count)?x.count:x.values.length;
       const breakdown=document.createElement("div");
       breakdown.className="bd-breakdown";
-      breakdown.textContent="기술치 "+base+" · 판정 보정 "+(modifier>0?"+":"")+modifier+" · 주사위 "+total+"개";
+      const testContext=(TEST_CONTEXTS.find(function(item){return item.id===(x.context||"general");})||TEST_CONTEXTS[0]).label;
+      breakdown.textContent=testContext+" · 기술치 "+base+" · 판정 보정 "+(modifier>0?"+":"")+modifier+" · 주사위 "+total+"개";
       die.appendChild(breakdown);
-      die.querySelector(".bd-close").onclick=function(){ boardDiceDismissed.add(boardDiceCurrent); boardDiceCurrent=""; renderBoard(); };
+      die.querySelector(".bd-close").onclick=function(){
+        boardDiceDismissed.add(boardDiceCurrent);
+        boardDiceCurrent="";
+        net._boardSig="";
+        renderBoard();
+      };
       setBoardDiceSound(!!(x.rolling&&x.sound));
       playBoardFailure(x);
       playBoardVictory(x);
@@ -5905,11 +5990,12 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   const grid=document.getElementById("diceGrid");
   const result=document.getElementById("diceResult");
   const actions=document.getElementById("diceActions");
+  const contextBar=document.getElementById("diceContext");
   const countAdjust=document.querySelector(".dice-count-adjust");
   const countValue=document.getElementById("diceCountValue");
   const motionBtn=document.getElementById("motionPermission");
   const narrative=document.getElementById("diceNarrative");
-  let dice={sid:"",part:"",label:"",count:0,values:[],selected:new Set(),rolling:false,pendingAction:""};
+  let dice={sid:"",part:"",label:"",context:"general",count:0,baseCount:0,permanentAdded:0,conditional:{dice:0,reroll:0,plus1:0},condReroll:emptyFlag(),condPlus1:emptyFlag(),values:[],selected:new Set(),rolling:false,pendingAction:""};
   let rollTimer=null, lastShake=0, lastMotion=0, motionSeen=false, motionPromptTimer=null;
 
   const historyPanel=document.getElementById("diceHistory");
@@ -5919,7 +6005,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   let historySaveFailed=false;
   function recordDice(reason,targets){
     const q=rqOf(), inv=currentInv();
-    history.push({time:new Date().toISOString(),name:inv?inv.kr:"조사자",skill:dice.label,base:dice.baseCount,modifier:dice.count-dice.baseCount,count:dice.count,values:dice.values.slice(),successes:successTotal(),mode:q.mode,sixBonus:!!q.sixBonus,reason:reason,targets:targets||[]});
+    history.push({time:new Date().toISOString(),name:inv?inv.kr:"조사자",skill:dice.label,context:dice.context,base:dice.baseCount,modifier:dice.count-dice.baseCount,count:dice.count,values:dice.values.slice(),successes:successTotal(),mode:q.mode,sixBonus:!!q.sixBonus,reason:reason,targets:targets||[]});
     try { localStorage.setItem(historyKey,JSON.stringify(history)); historySaveFailed=false; } catch(e){ historySaveFailed=true; }
   }
   function showHistory(){
@@ -5932,7 +6018,8 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
       const title=document.createElement("strong");
       title.textContent=entry.name+" · "+entry.skill+" · "+entry.reason;
       const detail=document.createElement("p");
-      detail.textContent=new Date(entry.time).toLocaleString("ko-KR")+"\n기술치 "+entry.base+" · 수동 보정 "+(entry.modifier>0?"+":"")+entry.modifier+" · 주사위 "+entry.count+"개";
+      const context=(TEST_CONTEXTS.find(function(x){return x.id===(entry.context||"general");})||TEST_CONTEXTS[0]).label;
+      detail.textContent=new Date(entry.time).toLocaleString("ko-KR")+"\n"+context+" · 기술치 "+entry.base+" · 판정 보정 "+(entry.modifier>0?"+":"")+entry.modifier+" · 주사위 "+entry.count+"개";
       const values=document.createElement("p");
       values.className="history-values";
       values.textContent=entry.values.join(" · ")+" → "+entry.successes+" 성공";
@@ -5962,6 +6049,28 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
       count=(s[part]||s.val||A)+pxBonus(slot,sid,part)+added;
     }
     return {label:label,count:clamp(count,0,30),added:added};
+  }
+  function conditionTotals(context){
+    const out={dice:0,reroll:0,plus1:0};
+    sqOf(dice.sid).conditional.forEach(function(item){ if(item.scope===context) out[item.effect]+=item.count; });
+    return out;
+  }
+  function contextLabel(id){ return (TEST_CONTEXTS.find(function(x){return x.id===id;})||TEST_CONTEXTS[0]).label; }
+  function paintContextBar(){
+    contextBar.innerHTML='<span>판정 상황</span>'+contextsForSkill(dice.sid).map(function(item){return '<button type="button" data-test-context="'+item.id+'" class="'+(dice.context===item.id?'on':'')+'" aria-pressed="'+(dice.context===item.id)+'">'+item.label+'</button>';}).join("");
+  }
+  function resetConditionalUses(){
+    dice.conditional=conditionTotals(dice.context);
+    dice.condReroll={n:dice.conditional.reroll,used:Array(dice.conditional.reroll).fill(false)};
+    dice.condPlus1={n:dice.conditional.plus1,used:Array(dice.conditional.plus1).fill(false)};
+  }
+  function selectContext(context){
+    if(!contextsForSkill(dice.sid).some(function(x){return x.id===context;})) context="general";
+    dice.context=context;
+    resetConditionalUses();
+    dice.count=clamp(dice.baseCount+dice.conditional.dice,0,30);
+    dice.values=[]; dice.selected.clear(); dice.rolling=false; dice.pendingAction=""; dice.shattered=false; dice.celebrating=false; dice.perfectLevel=0;
+    paintContextBar(); paintCountAdjust(); paintDice(); paintActions();
   }
   function unused(flag){
     if(!flag||!flag.n) return 0;
@@ -6174,7 +6283,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   }
   function publishDiceOverlay(){
     if(modal.hidden||!dice.values.length) diceOverlay=null;
-    else { const q=rqOf(), sixExtra=q.sixBonus?dice.values.filter(function(v){return v===6;}).length:0; diceOverlay={rollId:dice.rollId,openedAt:dice.openedAt,label:dice.label,baseCount:dice.baseCount,modifier:dice.count-dice.baseCount,count:dice.count,values:dice.values.slice(),successes:successTotal(),sixExtra:sixExtra,mode:q.mode,rolling:dice.rolling,shattered:!!dice.shattered,celebrating:!!dice.celebrating,perfectLevel:dice.perfectLevel||0,narrative:narrativeData()}; }
+    else { const q=rqOf(), sixExtra=q.sixBonus?dice.values.filter(function(v){return v===6;}).length:0; diceOverlay={rollId:dice.rollId,openedAt:dice.openedAt,label:dice.label,context:dice.context,baseCount:dice.baseCount,modifier:dice.count-dice.baseCount,count:dice.count,values:dice.values.slice(),successes:successTotal(),sixExtra:sixExtra,mode:q.mode,rolling:dice.rolling,shattered:!!dice.shattered,celebrating:!!dice.celebrating,perfectLevel:dice.perfectLevel||0,narrative:narrativeData()}; }
     publishSnap();
   }
   function actionInfo(type){
@@ -6184,6 +6293,8 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     if(type==="round-rr") return {owner:slot,key:"rr",mode:"reroll",label:"라운드 리롤"};
     if(type==="round-p1") return {owner:slot,key:"p1",mode:"plus1",label:"라운드 +1"};
     if(type==="round-ring") return {owner:slot,key:"ring",mode:"reroll",label:"행운의 반지"};
+    if(type==="cond-reroll") return {owner:dice,key:"condReroll",mode:"reroll",label:contextLabel(dice.context)+" 조건 리롤"};
+    if(type==="cond-plus1") return {owner:dice,key:"condPlus1",mode:"plus1",label:contextLabel(dice.context)+" 조건 +1"};
     return null;
   }
   function paintDice(){
@@ -6219,18 +6330,31 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   }
   function paintActions(){
     const slot=state(), sk=slot.skills[dice.sid]||{};
+    const conditionalActions=(dice.condReroll&&dice.condReroll.n?actionButton("cond-reroll",contextLabel(dice.context)+" 리롤",unused(dice.condReroll)):"")+
+      (dice.condPlus1&&dice.condPlus1.n?actionButton("cond-plus1",contextLabel(dice.context)+" +1",unused(dice.condPlus1)):"");
     actions.innerHTML=
       actionButton("skill-reroll",dice.label+" 리롤",unused(sk.reroll))+
       actionButton("skill-plus1",dice.label+" +1",unused(sk.plus1))+
       actionButton("round-rr","라운드 리롤",unused(slot.rr))+
       actionButton("round-arr","전체 리롤",unused(slot.arr))+
       actionButton("round-p1","라운드 +1",unused(slot.p1))+
-      actionButton("round-ring","행운의 반지",unused(slot.ring));
+      actionButton("round-ring","행운의 반지",unused(slot.ring))+
+      conditionalActions;
+    paintSummary();
+  }
+  function paintSummary(){
+    const slot=state(), sk=slot.skills[dice.sid]||{}, c=dice.conditional||{dice:0,reroll:0,plus1:0};
+    document.getElementById("diceSummary").innerHTML=
+      '<span class="dice-chip">현재 주사위 <strong id="diceCurrent">'+dice.count+'</strong></span>'+
+      '<span class="dice-chip">상시 추가 <strong>'+dice.permanentAdded+'</strong></span>'+
+      '<span class="dice-chip condition-chip">조건 추가 <strong>'+c.dice+'</strong></span>'+
+      '<span class="dice-chip">리롤 <strong>'+(unused(sk.reroll)+unused(slot.rr)+unused(dice.condReroll))+'</strong></span>'+
+      '<span class="dice-chip">+1 <strong>'+(unused(sk.plus1)+unused(slot.p1)+unused(dice.condPlus1))+'</strong></span>';
   }
   function paintCountAdjust(){
+    paintSummary();
     countValue.textContent=dice.count+"개";
     document.getElementById("diceTitle").textContent=dice.label+" · "+dice.count+"개";
-    document.getElementById("diceCurrent").textContent=dice.count;
     countAdjust.querySelector('[data-dice-count="-1"]').disabled=dice.count<=0;
     countAdjust.querySelector('[data-dice-count="1"]').disabled=dice.count>=30;
   }
@@ -6273,13 +6397,11 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     if(selection) selection.removeAllRanges();
     const ctx=contextFor(sid,part), slot=state(), sk=slot.skills[sid];
     if(rqOf().ring){ const ring=ensureFlag(slot,"ring"); ring.n=1; ring.used=[false]; save(); }
-    dice={sid:sid,part:part,label:ctx.label,count:ctx.count,baseCount:ctx.count,rollId:Date.now().toString(36)+Math.random().toString(36).slice(2,7),openedAt:Date.now(),values:[],selected:new Set(),rolling:false,pendingAction:""};
-    document.getElementById("diceSummary").innerHTML=
-      '<span class="dice-chip">현재 주사위 <strong id="diceCurrent">'+ctx.count+'</strong></span>'+
-      '<span class="dice-chip">추가 주사위 <strong>'+ctx.added+'</strong></span>'+
-      '<span class="dice-chip">리롤 <strong>'+(unused(sk.reroll)+unused(slot.rr))+'</strong></span>'+
-      '<span class="dice-chip">+1 <strong>'+(unused(sk.plus1)+unused(slot.p1))+'</strong></span>';
-    modal.hidden=false; document.body.classList.add("dice-open"); paintCountAdjust(); paintDice(); paintActions();
+    const initialContext=part==="cbt"?"combat":part==="acq"?"asset":part==="spl"?"magic":"general";
+    dice={sid:sid,part:part,label:ctx.label,context:initialContext,count:ctx.count,baseCount:ctx.count,permanentAdded:ctx.added,conditional:{dice:0,reroll:0,plus1:0},condReroll:emptyFlag(),condPlus1:emptyFlag(),rollId:Date.now().toString(36)+Math.random().toString(36).slice(2,7),openedAt:Date.now(),values:[],selected:new Set(),rolling:false,pendingAction:""};
+    resetConditionalUses();
+    dice.count=clamp(dice.baseCount+dice.conditional.dice,0,30);
+    modal.hidden=false; document.body.classList.add("dice-open"); paintContextBar(); paintCountAdjust(); paintDice(); paintActions();
     clearTimeout(motionPromptTimer);
     motionBtn.hidden=true;
     if(window.DeviceMotionEvent&&typeof DeviceMotionEvent.requestPermission==="function"){
@@ -6297,6 +6419,10 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   countAdjust.addEventListener("click",function(e){
     const button=e.target.closest("[data-dice-count]");
     if(button) adjustDiceCount(+button.dataset.diceCount);
+  });
+  contextBar.addEventListener("click",function(e){
+    const button=e.target.closest("[data-test-context]");
+    if(button&&!dice.rolling&&button.dataset.testContext!==dice.context) selectContext(button.dataset.testContext);
   });
   grid.addEventListener("click",function(e){
     const face=e.target.closest("[data-die]"); if(!face||dice.rolling) return;
@@ -6374,7 +6500,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260915-y";
+const APP_VER="20260920-a";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;
