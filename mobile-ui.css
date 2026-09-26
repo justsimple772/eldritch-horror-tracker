@@ -419,6 +419,28 @@ body.round-cursed .dice-celebrating .dice-face { border-color:#c682f2; backgroun
 .board-dice.blessed.celebrating .bd-close,.board-dice.blessed.shattered .bd-close { color:#f8fbff; background:rgba(0,0,0,.42); }
 .bd-reopen { position:fixed; z-index:91; right:clamp(14px,3vw,36px); bottom:clamp(14px,3vw,36px); min-height:48px; padding:10px 16px; border:2px solid #d8edf4; border-radius:999px; color:#f8fbff; background:#102d3be8; box-shadow:0 4px 16px #0008; font-size:clamp(15px,2.3vw,24px); font-weight:900; }
 .bd-reopen[hidden] { display:none; }
+.bd-history { position:fixed; z-index:91; left:clamp(14px,3vw,36px); bottom:clamp(14px,3vw,36px); min-height:48px; padding:10px 16px; border:2px solid #d8edf4; border-radius:999px; color:#f8fbff; background:#102d3be8; box-shadow:0 4px 16px #0008; font-size:clamp(15px,2.3vw,24px); font-weight:900; }
+.bd-history[hidden] { display:none; }
+.room-control-label { display:grid; gap:4px; margin-top:8px; color:var(--muted); font-size:11px; font-weight:800; }
+.room-control-label select { width:100%; min-height:34px; border:1px solid #806e57; border-radius:7px; padding:4px 8px; color:var(--ink); background:var(--panel); font-weight:800; }
+.peer-dice-toast { position:fixed; z-index:170; left:50%; bottom:max(18px,env(safe-area-inset-bottom)); translate:-50% 0; display:grid; grid-template-columns:minmax(0,1fr) 36px; width:min(92vw,520px); border:2px solid #d2b96d; border-radius:16px; overflow:hidden; background:#17141eeF; box-shadow:0 8px 30px #0009; }
+.peer-dice-toast[hidden] { display:none; }
+.peer-dice-toast button { min-height:58px; border:0; color:#fff5dc; background:transparent; font-size:14px; font-weight:900; text-align:left; padding:10px 14px; }
+.peer-dice-toast .peer-toast-x { padding:0; text-align:center; font-size:22px; color:#d9cdbd; }
+.peer-dice-modal,.peer-history { position:fixed; inset:0; z-index:180; display:flex; align-items:center; justify-content:center; padding:14px; background:#050609e8; }
+.peer-dice-modal[hidden],.peer-history[hidden] { display:none; }
+.peer-dice-sheet,.peer-history>section { width:min(94vw,680px); max-height:92vh; overflow:auto; border:2px solid #bba66c; border-radius:18px; padding:16px; color:#fff4dc; background:radial-gradient(circle at top,#30293a,#131119 70%); box-shadow:0 18px 60px #000; }
+.peer-dice-sheet header,.peer-history header { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.peer-dice-sheet header h2,.peer-history h2 { margin:3px 0 12px; color:#fff8e8; }
+.peer-dice-sheet header button,.peer-history header button { min-height:38px; margin-left:6px; border:1px solid #a99268; border-radius:9px; color:#fff4dc; background:#3c3344; font-weight:900; }
+.peer-faces { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin:18px 0; }
+.peer-face { display:grid; place-items:center; width:clamp(54px,17vw,92px); aspect-ratio:1; border:3px solid #786d77; border-radius:15px; background:#ece5d8; color:#241f24; font-size:clamp(30px,10vw,58px); font-weight:1000; }
+.peer-face.success { border-color:#ffe074; background:#d8ffc4; box-shadow:0 0 18px #ffe17499; }
+.peer-dice-result { text-align:center; font-size:clamp(26px,8vw,48px); font-weight:1000; color:#fff0a8; }
+.peer-dice-meta,.peer-dice-reason { margin:10px 0; text-align:center; color:#ddd1c6; line-height:1.45; }
+.peer-history article { padding:12px 0; border-bottom:1px solid #665c69; }
+.peer-history article strong { display:block; color:#fff1b9; }
+.peer-history article p { margin:6px 0 0; color:#ddd4df; line-height:1.45; }
 
 /* Blessed condition card: parchment, rose light and weathered silver. */
 body.round-blessed { --bg:#d7b4a8; --card:#f2e5cc; --gold:#927357; --gold2:#65483e; --cream:#3d342f; --muted:#796258; --line:#a79b8d; --btn:#e4d2b9; background:radial-gradient(ellipse at 50% 0%,#fff0d8 0%,#e5b3a4 40%,#a87778 100%) !important; }

@@ -3116,7 +3116,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260926-a">
+<link rel="stylesheet" href="mobile-ui.css?v=20260926-b">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -3180,6 +3180,16 @@
     <input id="roomCode" maxlength="4" placeholder="코드">
     <button type="button" id="roomJoin">입장</button>
   </div>
+  <label class="room-control-label">공용 항목 변경 권한
+    <select id="roomControl">
+      <option value="anyone">누구나 변경</option>
+      <option value="lead">현재 대표만 변경</option>
+      <option value="manager">지정 진행자만 변경</option>
+    </select>
+  </label>
+  <label class="room-control-label" id="roomManagerRow" hidden>지정 진행자 자리
+    <select id="roomManagerSeat"><option value="1">1번</option><option value="2">2번</option><option value="3">3번</option><option value="4">4번</option><option value="5">5번</option><option value="6">6번</option><option value="7">7번</option><option value="8">8번</option></select>
+  </label>
   <div class="row">
     <button type="button" id="roomLeave">나가기</button>
   </div>
@@ -3216,6 +3226,7 @@
   <div class="board-edit-pop" id="boardEditPop" hidden></div>
   <div class="board-dice" id="boardDiceOverlay" hidden></div>
   <button type="button" class="bd-reopen" id="boardDiceReopen" hidden>닫은 결과 보기</button>
+  <button type="button" class="bd-history" id="boardDiceHistory" hidden>공유 주사위 기록</button>
 </div>
 </div>
 
@@ -3256,6 +3267,9 @@
     <p class="dice-help">다시 굴리려면 휴대폰을 흔드세요. 리롤 또는 +1 버튼을 누른 뒤 적용할 주사위를 선택하세요.</p>
   </section>
 </div>
+<aside class="peer-dice-toast" id="peerDiceToast" hidden aria-live="polite"><button type="button" id="peerDiceToastOpen"></button><button type="button" class="peer-toast-x" id="peerDiceToastClose" aria-label="알림 닫기">×</button></aside>
+<div class="peer-dice-modal" id="peerDiceModal" hidden><section class="peer-dice-sheet" role="dialog" aria-modal="true" aria-label="다른 조사자 주사위 결과"><header><div><small>공유 주사위 결과</small><h2 id="peerDiceTitle"></h2></div><div><button type="button" id="peerDiceHistoryOpen">기록</button><button type="button" id="peerDiceClose">닫기</button></div></header><div id="peerDiceBody"></div></section></div>
+<div class="peer-history" id="peerDiceHistory" hidden><section><header><h2>공유 주사위 기록</h2><button type="button" id="peerDiceHistoryClose">닫기</button></header><div id="peerDiceHistoryList"></div></section></div>
 <script>
 
 const PASSIVE={
@@ -4625,8 +4639,14 @@ function roomUid(){
   }
   return id;
 }
-const net={ gone:{}, uid:roomUid(), role:null, shared:false, createOpen:null, code:"", peer:null, es:null, conns:[], board:{}, seat:1, conn:null, lead:0, turn:0, laps:0, mythos:false };
-function canControlBoard(){ return net.role==="host" || (net.shared && net.role==="viewer"); }
+const net={ gone:{}, uid:roomUid(), role:null, shared:false, createOpen:null, code:"", peer:null, es:null, conns:[], board:{}, seat:1, conn:null, lead:0, turn:0, laps:0, mythos:false, controlMode:"anyone", managerUid:"", managerSeat:1, sharedDiceHistory:[] };
+function canControlBoard(){
+  if(net.role==="host") return true;
+  if(!net.shared) return false;
+  if(net.controlMode==="anyone") return true;
+  if(net.controlMode==="manager") return net.uid===net.managerUid;
+  return (net.seats||[]).indexOf((net.lead||0)+1)>=0;
+}
 function roomCodeNew(){
   const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let s=""; for(let i=0;i<4;i++) s+=a[Math.floor(Math.random()*a.length)];
@@ -4890,7 +4910,7 @@ function cfConnect(){
       setRoomSt((net.shared?"공유방 연결됨 ":"CF 연결됨 ")+(net.code||""));
       (net.cfq||[]).forEach(function(b){ try{ ws.send(b); }catch(e){} });
       net.cfq=[];
-      if(net.shared && net.createOpen) relaySend({type:"create", open:net.createOpen, uid:net.uid});
+      if(net.shared && net.createOpen) relaySend({type:"create", open:net.createOpen, controlMode:net.controlMode, managerSeat:net.managerSeat, uid:net.uid});
       relaySend({type:"hello"});
       if(net.role==="player" && net.seats && net.seats.length){
         relaySend({type:"claim", seats:net.seats, uid:net.uid});
@@ -4952,6 +4972,65 @@ function relayHandleLine(line){
   }catch(e){}
 }
 
+const remoteDiceSeen={};
+let remoteDiceLatest=null, remoteDiceHistory=[];
+function diceThreshold(mode){ return mode==="blessed"?4:mode==="cursed"?6:5; }
+function remoteDiceKey(data){
+  const x=data&&data.dice;
+  if(!x) return "";
+  return (data.uid||data.seat||"")+":"+(x.eventId||x.rollId||"")+":"+(x.rolling?"rolling":(x.values||[]).join("-"));
+}
+function remoteDiceEntry(data){ return {uid:data.uid||"",seat:data.seat||0,name:data.name||"조사자",dice:Object.assign({},data.dice),t:Date.now()}; }
+function paintRemoteDice(entry){
+  if(!entry||!entry.dice) return;
+  remoteDiceLatest=entry;
+  const x=entry.dice, threshold=diceThreshold(x.mode), body=document.getElementById("peerDiceBody");
+  document.getElementById("peerDiceTitle").textContent=entry.name+" · "+(x.label||"주사위");
+  const faces=(x.values||[]).map(function(v){return '<span class="peer-face'+(!x.rolling&&v>=threshold?' success':'')+'">'+v+'</span>';}).join("");
+  const context=(TEST_CONTEXTS.find(function(item){return item.id===(x.context||"general");})||TEST_CONTEXTS[0]).label;
+  body.innerHTML='<div class="peer-faces">'+faces+'</div><div class="peer-dice-result">'+(x.rolling?'굴리는 중…':(x.successes||0)+'성공')+'</div>'+(x.narrative&&x.narrative.text?'<p class="peer-dice-reason">'+x.narrative.text+'</p>':'')+'<p class="peer-dice-meta">'+context+' · 기술치 '+(x.baseCount??0)+' · 판정 보정 '+((x.modifier||0)>0?'+':'')+(x.modifier||0)+' · 주사위 '+(x.count??(x.values||[]).length)+'개'+(x.reason?' · '+x.reason:'')+'</p>';
+}
+function receiveRemoteDice(data){
+  if(!data||!data.dice||data.uid===net.uid) return;
+  const key=remoteDiceKey(data);
+  if(!key||remoteDiceSeen[key]) return;
+  remoteDiceSeen[key]=Date.now();
+  const entry=remoteDiceEntry(data), x=entry.dice, toast=document.getElementById("peerDiceToast"), open=document.getElementById("peerDiceToastOpen");
+  remoteDiceLatest=entry;
+  open.textContent=entry.name+" · "+(x.label||"주사위")+" · "+(x.rolling?"굴리는 중…":(x.successes||0)+"성공")+(x.rolling?"":"  · 눌러서 보기");
+  toast.hidden=false;
+  if(!x.rolling){
+    const finalKey=(data.uid||data.seat||"")+":"+(x.eventId||key);
+    if(!remoteDiceHistory.some(function(item){return item.key===finalKey;})){
+      entry.key=finalKey; remoteDiceHistory.push(entry); if(remoteDiceHistory.length>100) remoteDiceHistory.shift();
+    }
+  }
+  Object.keys(remoteDiceSeen).forEach(function(k){if(Date.now()-remoteDiceSeen[k]>600000) delete remoteDiceSeen[k];});
+}
+function combinedDiceHistory(){
+  const all=[];
+  (net.sharedDiceHistory||[]).forEach(function(item){ if(item&&item.dice) all.push({key:(item.uid||item.seat||"")+":"+(item.dice.eventId||item.t),uid:item.uid||"",seat:item.seat||0,name:item.name||"조사자",dice:item.dice,t:item.t||0}); });
+  remoteDiceHistory.forEach(function(item){ if(!all.some(function(x){return x.key===item.key;})) all.push(item); });
+  return all.sort(function(a,b){return (b.t||0)-(a.t||0);});
+}
+function showRemoteDiceHistory(){
+  const list=document.getElementById("peerDiceHistoryList"), history=combinedDiceHistory();
+  list.innerHTML="";
+  if(!history.length) list.textContent="아직 공유된 주사위 기록이 없습니다.";
+  history.forEach(function(entry){
+    const x=entry.dice, article=document.createElement("article"), title=document.createElement("strong"), detail=document.createElement("p");
+    title.textContent=entry.name+" · "+(x.label||"주사위")+" · "+(x.successes||0)+"성공";
+    detail.textContent=(x.values||[]).join(" · ")+(x.reason?"\n"+x.reason:"");
+    article.append(title,detail); article.onclick=function(){ document.getElementById("peerDiceHistory").hidden=true; paintRemoteDice(entry); document.getElementById("peerDiceModal").hidden=false; }; list.appendChild(article);
+  });
+  document.getElementById("peerDiceHistory").hidden=false;
+}
+document.getElementById("peerDiceToastOpen").onclick=function(){ if(remoteDiceLatest){paintRemoteDice(remoteDiceLatest); document.getElementById("peerDiceModal").hidden=false;} document.getElementById("peerDiceToast").hidden=true; };
+document.getElementById("peerDiceToastClose").onclick=function(){ document.getElementById("peerDiceToast").hidden=true; };
+document.getElementById("peerDiceClose").onclick=function(){ document.getElementById("peerDiceModal").hidden=true; };
+document.getElementById("peerDiceHistoryOpen").onclick=showRemoteDiceHistory;
+document.getElementById("peerDiceHistoryClose").onclick=function(){ document.getElementById("peerDiceHistory").hidden=true; };
+
 function relayOnMsg(raw){
   let msg=raw;
   try{ if(typeof raw==="string") msg=JSON.parse(raw); }catch(e){ return; }
@@ -4966,8 +5045,16 @@ function relayOnMsg(raw){
     net.board=msg.board||{};
     net.openSeats=msg.open||[];
     net.taken=msg.taken||{};
+    net.controlMode=msg.controlMode||"anyone";
+    net.managerUid=msg.managerUid||"";
+    net.managerSeat=msg.managerSeat||1;
+    net.sharedDiceHistory=msg.diceHistory||[];
+    if(msg.mystery!=null) net.mythSum=msg.mystery||"";
     if(msg.lead!=null) net.lead=msg.lead;
     if(msg.turn!=null) net.turn=msg.turn;
+    const control=document.getElementById("roomControl"); if(control) control.value=net.controlMode;
+    paintMythCur();
+    paintRoomChrome();
     paintSeatPick();
     net._boardSig="";
     renderBoard();
@@ -5024,14 +5111,16 @@ function relayOnMsg(raw){
     publishSnap();
     startSnapBeat();
   }
-  if(msg.type==="deny" && net.role==="player"){
+  if(msg.type==="deny" && net.role==="player" && msg.reason!=="permission"){
     const n=msg.seat||"";
     setRoomSt(msg.reason==="busy"?(n+"번 자리에 이미 조사자가 있습니다"):(n+"번은 자리가 없습니다"));
     if(n){ delete net.pick[n]; net.pickOrder=net.pickOrder.filter(function(x){return x!==n;}); }
     net.claimed=false;
     paintSeatPick();
   }
+  if(msg.type==="deny" && msg.reason==="permission") setRoomSt("이 공용 항목을 변경할 권한이 없습니다");
   if(msg.type==="snap" && msg.data){
+    receiveRemoteDice(msg.data);
     if(net.shared){
       net.board[clamp(msg.data.seat||1,1,8)-1]=msg.data;
       net.taken[msg.data.seat]=msg.data.name||"사용중";
@@ -5175,6 +5264,7 @@ function swapBoard(a,b){
   if(net.lead===a) net.lead=b; else if(net.lead===b) net.lead=a;
   if(net.turn===a) net.turn=b; else if(net.turn===b) net.turn=a;
   const A=a+1, B=b+1;
+  if(net.managerSeat===A) net.managerSeat=B; else if(net.managerSeat===B) net.managerSeat=A;
   net.openSeats=net.openSeats||[];
   const hasA=net.openSeats.indexOf(A)>=0, hasB=net.openSeats.indexOf(B)>=0;
   if(hasA && !hasB){ net.openSeats=net.openSeats.filter(function(x){return x!==A;}); net.openSeats.push(B); }
@@ -5712,6 +5802,8 @@ function renderBoard(){
   g.innerHTML=html;
   const die=document.getElementById("boardDiceOverlay");
   const reopen=document.getElementById("boardDiceReopen");
+  const historyButton=document.getElementById("boardDiceHistory");
+  if(historyButton){ historyButton.hidden=!net.shared||!combinedDiceHistory().length; historyButton.onclick=showRemoteDiceHistory; }
   const diceEntries=Object.keys(net.board).map(function(k){
     const data=net.board[k]; if(!data||!data.dice) return null;
     const id=data.dice.rollId||((data.name||"조사자")+":"+(data.dice.label||"주사위"));
@@ -5888,6 +5980,9 @@ function createSharedRoom(openSeats){
   net.code=roomCodeNew();
   net.role="player";
   net.shared=true;
+  net.controlMode=document.getElementById("roomControl").value||"anyone";
+  net.managerSeat=+(document.getElementById("roomManagerSeat").value||1);
+  net.managerUid=net.uid;
   net.createOpen=(openSeats&&openSeats.length)?openSeats.slice():[1,2,3,4,5,6,7,8];
   net.openSeats=net.createOpen.slice();
   net.board={}; net.taken={}; net.seats=[]; net.seat=1; net.pick={}; net.pickOrder=[]; net.claimed=false;
@@ -5912,6 +6007,12 @@ function seatsConflict(){
 function paintRoomChrome(){
   const host=document.getElementById("roomHost");
   if(host) host.style.display=(net.role==="player"||net.role==="host"||net.role==="viewer")?"none":"";
+  const control=document.getElementById("roomControl");
+  const manager=document.getElementById("roomManagerSeat"), managerRow=document.getElementById("roomManagerRow");
+  const locked=!!(net.shared&&net.managerUid&&net.managerUid!==net.uid);
+  if(control){ control.value=net.controlMode||"anyone"; control.disabled=locked; }
+  if(manager){ manager.value=String(net.managerSeat||1); manager.disabled=locked; }
+  if(managerRow) managerRow.hidden=(net.controlMode!=="manager");
 }
 
 function hostBroadcastOcc(){
@@ -6119,6 +6220,15 @@ document.getElementById("roomCode").addEventListener("change", function(){
   const code=(this.value||"").trim().toUpperCase();
   this.value=code;
 });
+document.getElementById("roomControl").addEventListener("change",function(){
+  net.controlMode=this.value||"anyone";
+  paintRoomChrome();
+  if(net.shared&&net.code) relaySend({type:"roomConfig",controlMode:net.controlMode,managerSeat:net.managerSeat,uid:net.uid});
+});
+document.getElementById("roomManagerSeat").addEventListener("change",function(){
+  net.managerSeat=clamp(+this.value||1,1,8);
+  if(net.shared&&net.code) relaySend({type:"roomConfig",controlMode:net.controlMode,managerSeat:net.managerSeat,uid:net.uid});
+});
 document.getElementById("roomLeave").onclick=function(){
   const seats=net.pickOrder && net.pickOrder.length?net.pickOrder.slice():(net.seats||[]);
   const pack={type:"leave", seats:seats, uid:net.uid};
@@ -6160,7 +6270,7 @@ document.getElementById("boardBack").onclick=function(){
   });
 })();
 document.addEventListener("click", function(e){
-  if(e.target.closest("#mythBtn")){ e.preventDefault(); openMythPop("set"); return; }
+  if(e.target.closest("#mythBtn")){ e.preventDefault(); if(net.shared&&!canControlBoard()){setRoomSt("현재 미스터리를 변경할 권한이 없습니다");return;} openMythPop("set"); return; }
   const pop=document.getElementById("mythPop");
   if(!pop || pop.hidden) return;
   if(e.target.id==="mythClose"){ closeMythPop(); return; }
@@ -6177,6 +6287,7 @@ document.addEventListener("click", function(e){
     const m=aoObj.ms[i];
     net.mythSum=aoObj.kr+" · "+m.t+" — "+m.s;
     paintMythCur();
+    if(net.shared) relaySend({type:"mystery",value:net.mythSum,uid:net.uid});
     closeMythPop();
   }
 });
@@ -6374,6 +6485,8 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   let historySaveFailed=false;
   function recordDice(reason,targets){
     const q=rqOf(), inv=currentInv();
+    dice.lastReason=reason;
+    dice.eventId=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
     history.push({time:new Date().toISOString(),name:inv?inv.kr:"조사자",skill:dice.label,context:dice.context,base:dice.baseCount,modifier:dice.count-dice.baseCount,count:dice.count,values:dice.values.slice(),successes:successTotal(),mode:q.mode,sixBonus:!!q.sixBonus,reason:reason,targets:targets||[]});
     try { localStorage.setItem(historyKey,JSON.stringify(history)); historySaveFailed=false; } catch(e){ historySaveFailed=true; }
   }
@@ -6652,7 +6765,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
   }
   function publishDiceOverlay(){
     if(modal.hidden||!dice.values.length) diceOverlay=null;
-    else { const q=rqOf(), sixExtra=q.sixBonus?dice.values.filter(function(v){return v===6;}).length:0; diceOverlay={rollId:dice.rollId,openedAt:dice.openedAt,label:dice.label,context:dice.context,baseCount:dice.baseCount,modifier:dice.count-dice.baseCount,count:dice.count,values:dice.values.slice(),successes:successTotal(),sixExtra:sixExtra,mode:q.mode,rolling:dice.rolling,shattered:!!dice.shattered,celebrating:!!dice.celebrating,perfectLevel:dice.perfectLevel||0,narrative:narrativeData()}; }
+    else { const q=rqOf(), sixExtra=q.sixBonus?dice.values.filter(function(v){return v===6;}).length:0; diceOverlay={rollId:dice.rollId,eventId:dice.eventId||"",openedAt:dice.openedAt,label:dice.label,context:dice.context,baseCount:dice.baseCount,modifier:dice.count-dice.baseCount,count:dice.count,values:dice.values.slice(),successes:successTotal(),sixExtra:sixExtra,mode:q.mode,rolling:dice.rolling,shattered:!!dice.shattered,celebrating:!!dice.celebrating,perfectLevel:dice.perfectLevel||0,narrative:narrativeData(),reason:dice.lastReason||""}; }
     publishSnap();
   }
   function baseSkillLabel(){
@@ -6741,7 +6854,7 @@ document.getElementById("scaleOk").onclick=function(){ document.getElementById("
     rollTimer=setInterval(function(){
       targets.forEach(function(i){ dice.values[i]=randomDie(); });
       paintDice(); publishDiceOverlay();
-      if(++ticks>=15){ clearInterval(rollTimer); rollTimer=null; dice.rolling=false; dice.shattered=successTotal()===0; dice.celebrating=!dice.shattered&&dice.values.length>0&&dice.values.every(isSuccess); dice.perfectLevel=dice.celebrating?(dice.values.length<=2?1:dice.values.length<=4?2:3):0; dice.narrativeVariant=dice.shattered?0:Math.floor(Math.random()*3); setDiceRollSound(false); if(dice.shattered){ if(diceSoundEnabled()) playDiceFailure(); if(navigator.vibrate) navigator.vibrate([24,22,96]); } else if(dice.celebrating){ if(diceSoundEnabled()) playDiceVictory(dice.values.length); if(navigator.vibrate) navigator.vibrate([16,35,16]); } else if(navigator.vibrate) navigator.vibrate(18); paintDice(); paintActions(); publishDiceOverlay(); recordDice(reason||"첫 굴림",indices); }
+      if(++ticks>=15){ clearInterval(rollTimer); rollTimer=null; dice.rolling=false; dice.shattered=successTotal()===0; dice.celebrating=!dice.shattered&&dice.values.length>0&&dice.values.every(isSuccess); dice.perfectLevel=dice.celebrating?(dice.values.length<=2?1:dice.values.length<=4?2:3):0; dice.narrativeVariant=dice.shattered?0:Math.floor(Math.random()*3); setDiceRollSound(false); if(dice.shattered){ if(diceSoundEnabled()) playDiceFailure(); if(navigator.vibrate) navigator.vibrate([24,22,96]); } else if(dice.celebrating){ if(diceSoundEnabled()) playDiceVictory(dice.values.length); if(navigator.vibrate) navigator.vibrate([16,35,16]); } else if(navigator.vibrate) navigator.vibrate(18); paintDice(); paintActions(); recordDice(reason||"첫 굴림",indices); publishDiceOverlay(); }
     },85);
   }
   function useAction(type){
@@ -6864,7 +6977,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260926-a";
+const APP_VER="20260926-b";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;

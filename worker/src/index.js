@@ -24,6 +24,11 @@ function emptyRoom() {
     board: {},
     lead: 0,
     turn: 0,
+    controlMode: "anyone",
+    managerUid: "",
+    managerSeat: 1,
+    mystery: "",
+    diceHistory: [],
     updatedAt: Date.now()
   };
 }
@@ -57,7 +62,7 @@ export class Room extends DurableObject {
     this.env = env;
     this.room = emptyRoom();
     this.ready = this.ctx.blockConcurrencyWhile(async () => {
-      this.room = (await this.ctx.storage.get("room")) || emptyRoom();
+      this.room = Object.assign(emptyRoom(), (await this.ctx.storage.get("room")) || {});
     });
   }
 
@@ -93,6 +98,11 @@ export class Room extends DurableObject {
       taken,
       lead: this.room.lead,
       turn: this.room.turn,
+      controlMode: this.room.controlMode || "anyone",
+      managerUid: this.room.managerUid || this.room.owner || "",
+      managerSeat: this.room.managerSeat || 1,
+      mystery: this.room.mystery || "",
+      diceHistory: this.room.diceHistory || [],
       updatedAt: this.room.updatedAt,
       server: "durable-object"
     };
@@ -126,6 +136,13 @@ export class Room extends DurableObject {
     return null;
   }
 
+  canManage(uid) {
+    const mode = this.room.controlMode || "anyone";
+    if (mode === "anyone") return true;
+    if (mode === "manager") return uid === (this.seatOwner(this.room.managerSeat || 1) || this.room.managerUid || this.room.owner);
+    return uid === this.seatOwner((this.room.lead || 0) + 1);
+  }
+
   async persist() {
     this.room.updatedAt = Date.now();
     await this.ctx.storage.put("room", this.room);
@@ -155,6 +172,9 @@ export class Room extends DurableObject {
         this.room = emptyRoom();
         this.room.created = true;
         this.room.owner = uid;
+        this.room.managerUid = uid;
+        this.room.managerSeat = Math.max(1, Math.min(MAX_SEATS, Number(message.managerSeat) || 1));
+        this.room.controlMode = ["anyone", "lead", "manager"].includes(message.controlMode) ? message.controlMode : "anyone";
         this.room.open = open;
         this.room.lead = open[0] - 1;
         this.room.turn = this.room.lead;
@@ -202,6 +222,15 @@ export class Room extends DurableObject {
       data.seat = seat;
       data.t = Date.now();
       this.room.board[String(seat - 1)] = data;
+      if (seat === (this.room.managerSeat || 1)) this.room.managerUid = data.uid;
+      if (data.dice && !data.dice.rolling && data.dice.eventId) {
+        this.room.diceHistory = this.room.diceHistory || [];
+        const eventKey = data.uid + ":" + data.dice.eventId;
+        if (!this.room.diceHistory.some((item) => item.key === eventKey)) {
+          this.room.diceHistory.push({ key: eventKey, uid: data.uid, seat, name: data.name || "조사자", dice: data.dice, t: data.t });
+          if (this.room.diceHistory.length > 100) this.room.diceHistory.splice(0, this.room.diceHistory.length - 100);
+        }
+      }
       await this.persist();
       this.send(ws, { type: "ok", uid: data.uid, seats: [seat] });
       this.broadcast({ type: "snap", data });
@@ -222,6 +251,7 @@ export class Room extends DurableObject {
     }
 
     if (message.type === "lead") {
+      if (!this.canManage(uid)) return this.send(ws, { type: "deny", reason: "permission", action: "lead", uid });
       this.room.lead = Math.max(0, Math.min(MAX_SEATS - 1, Number(message.seat) || 0));
       this.room.turn = Math.max(0, Math.min(MAX_SEATS - 1, Number(message.turn) || 0));
       await this.persist();
@@ -231,6 +261,7 @@ export class Room extends DurableObject {
     }
 
     if (message.type === "swap") {
+      if (!this.canManage(uid)) return this.send(ws, { type: "deny", reason: "permission", action: "swap", uid });
       const a = Number(message.a), b = Number(message.b);
       if (Number.isInteger(a) && Number.isInteger(b) && a >= 0 && b >= 0 && a < MAX_SEATS && b < MAX_SEATS && a !== b) {
         const first = this.room.board[String(a)];
@@ -239,6 +270,7 @@ export class Room extends DurableObject {
         if (first) { first.seat = b + 1; this.room.board[String(b)] = first; } else delete this.room.board[String(b)];
         if (this.room.lead === a) this.room.lead = b; else if (this.room.lead === b) this.room.lead = a;
         if (this.room.turn === a) this.room.turn = b; else if (this.room.turn === b) this.room.turn = a;
+        if (this.room.managerSeat === a + 1) this.room.managerSeat = b + 1; else if (this.room.managerSeat === b + 1) this.room.managerSeat = a + 1;
         await this.persist();
       }
       this.broadcast(message);
@@ -247,7 +279,27 @@ export class Room extends DurableObject {
     }
 
     if (message.type === "boardEdit") {
+      if (!this.canManage(uid)) return this.send(ws, { type: "deny", reason: "permission", action: "boardEdit", uid });
       this.broadcast(message, ws);
+      return;
+    }
+
+    if (message.type === "mystery") {
+      if (!this.canManage(uid)) return this.send(ws, { type: "deny", reason: "permission", action: "mystery", uid });
+      this.room.mystery = String(message.value || "").slice(0, 1200);
+      await this.persist();
+      this.broadcast(this.stateMessage());
+      return;
+    }
+
+    if (message.type === "roomConfig") {
+      if (uid !== (this.seatOwner(this.room.managerSeat || 1) || this.room.managerUid || this.room.owner)) return this.send(ws, { type: "deny", reason: "permission", action: "roomConfig", uid });
+      if (["anyone", "lead", "manager"].includes(message.controlMode)) this.room.controlMode = message.controlMode;
+      this.room.managerSeat = Math.max(1, Math.min(MAX_SEATS, Number(message.managerSeat) || this.room.managerSeat || 1));
+      const nextManager = this.seatOwner(this.room.managerSeat);
+      if (nextManager) this.room.managerUid = nextManager;
+      await this.persist();
+      this.broadcast(this.stateMessage());
       return;
     }
   }
