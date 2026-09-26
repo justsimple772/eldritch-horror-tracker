@@ -3116,7 +3116,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260921-d">
+<link rel="stylesheet" href="mobile-ui.css?v=20260926-a">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -3171,10 +3171,10 @@
 
 
 <div class="roompop" id="roomPop">
-  <h4>실시간 방</h4>
+  <h4>공유방</h4>
   <div class="row">
-    <button type="button" id="roomHost">대표방 만들기</button>
-    <button type="button" id="roomBoard">전광판</button>
+    <button type="button" id="roomHost">공유방 만들기</button>
+    <button type="button" id="roomBoard">전광판으로 보기</button>
   </div>
   <div class="row">
     <input id="roomCode" maxlength="4" placeholder="코드">
@@ -4616,7 +4616,17 @@ document.addEventListener("click", function(e){
 });
 
 const ROOM_PREFIX="ehtrk-";
-const net={ gone:{}, uid:"u"+Math.random().toString(36).slice(2,8), role:null, code:"", peer:null, es:null, conns:[], board:{}, seat:1, conn:null, lead:0, turn:0, laps:0, mythos:false };
+function roomUid(){
+  let id="";
+  try{ id=sessionStorage.getItem("eh-room-uid")||""; }catch(e){}
+  if(!id){
+    id="u"+Math.random().toString(36).slice(2,10);
+    try{ sessionStorage.setItem("eh-room-uid",id); }catch(e){}
+  }
+  return id;
+}
+const net={ gone:{}, uid:roomUid(), role:null, shared:false, createOpen:null, code:"", peer:null, es:null, conns:[], board:{}, seat:1, conn:null, lead:0, turn:0, laps:0, mythos:false };
+function canControlBoard(){ return net.role==="host" || (net.shared && net.role==="viewer"); }
 function roomCodeNew(){
   const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let s=""; for(let i=0;i<4;i++) s+=a[Math.floor(Math.random()*a.length)];
@@ -4647,9 +4657,9 @@ function openSeatPick(mode){
   const ok=document.getElementById("seatPickOk");
   if(mode==="host"){
     net.draftOpen=net.draftOpen||{};
-    title.textContent="방 자리 고르기";
+    title.textContent="공유방 자리 고르기";
     sub.textContent="켜 둘 칸을 누르세요. 고른 칸만 입장 가능합니다.";
-    ok.textContent="방 만들기";
+    ok.textContent="공유방 만들기";
   } else {
     net.pick={}; net.pickOrder=[];
     title.textContent="빈 자리 선택";
@@ -4856,7 +4866,10 @@ function snapNow(slotIdx, seatNum){
 }
 
 
-function cfBase(){ return (localStorage.getItem("eh-cf")||"wss://eh-relay.eldritch-cjh.workers.dev").replace(/\/$/,""); }
+function cfBase(){
+  try{ if(new URLSearchParams(location.search).get("relay")==="local") return "ws://127.0.0.1:8787"; }catch(e){}
+  return (localStorage.getItem("eh-cf")||"wss://eh-relay.eldritch-cjh.workers.dev").replace(/\/$/,"");
+}
 function cfWsUrl(code){
   const b=cfBase();
   if(!b) return "";
@@ -4874,15 +4887,17 @@ function cfConnect(){
     net.cfws=ws;
     ws.onopen=function(){
       if(net.claimTimer) clearInterval(net.claimTimer);
-      setRoomSt("CF 연결됨 "+(net.code||""));
+      setRoomSt((net.shared?"공유방 연결됨 ":"CF 연결됨 ")+(net.code||""));
       (net.cfq||[]).forEach(function(b){ try{ ws.send(b); }catch(e){} });
       net.cfq=[];
+      if(net.shared && net.createOpen) relaySend({type:"create", open:net.createOpen, uid:net.uid});
       relaySend({type:"hello"});
       if(net.role==="player" && net.seats && net.seats.length){
         relaySend({type:"claim", seats:net.seats, uid:net.uid});
         publishSnap();
         startSnapBeat();
       }
+      if(net.shared && net.role==="viewer") relaySend({type:"viewer", uid:net.uid});
       if(net.role==="host") hostBroadcastOcc();
     };
     ws.onmessage=function(ev){ relayHandleLine(ev.data); };
@@ -4916,6 +4931,7 @@ function relaySend(msg){
     net.cfq.push(body);
     cfConnect();
   }
+  if(net.shared) return;
   relayBases().forEach(function(base){
     fetch(relayUrl(net.code, base), {
       method:"POST",
@@ -4941,6 +4957,45 @@ function relayOnMsg(raw){
   try{ if(typeof raw==="string") msg=JSON.parse(raw); }catch(e){ return; }
   if(!msg) return;
   if(msg.from===net.uid) return;
+  if(msg.type==="roomState"){
+    net.shared=true;
+    if(!msg.created){
+      if(!net.createOpen) setRoomSt("없는 공유방 코드입니다");
+      return;
+    }
+    net.board=msg.board||{};
+    net.openSeats=msg.open||[];
+    net.taken=msg.taken||{};
+    if(msg.lead!=null) net.lead=msg.lead;
+    if(msg.turn!=null) net.turn=msg.turn;
+    paintSeatPick();
+    net._boardSig="";
+    renderBoard();
+    if(net.role==="viewer") setRoomSt("공유방 "+net.code+" · 전광판 연결됨");
+    else if(net.role==="player" && !net.claimed) setRoomSt("공유방 "+net.code+" · 자리를 선택하세요");
+  }
+  if(msg.type==="created" && (!msg.uid || msg.uid===net.uid)){
+    net.shared=true;
+    net.createOpen=null;
+    net.openSeats=msg.open||net.openSeats||[];
+    setRoomSt("공유방 "+net.code+" 생성됨 · 내 자리를 선택하세요");
+    if(net.role==="player" && !(net.seats&&net.seats.length)) openSeatPick("join");
+  }
+  if(msg.type==="exists" && net.createOpen){
+    const open=net.createOpen.slice();
+    relayStop();
+    net.code=roomCodeNew();
+    net.shared=true;
+    net.createOpen=open;
+    document.getElementById("roomCode").value=net.code;
+    document.getElementById("boardCode").textContent=net.code;
+    setRoomSt("같은 코드가 있어 새 공유방 코드로 다시 만드는 중…");
+    relayListen();
+  }
+  if(msg.type==="missing"){
+    setRoomSt("없는 공유방 코드입니다");
+    if(net.role==="player") closeSeatPick();
+  }
   if(msg.type && msg.type!=="occ" && msg.type!=="board" && msg.type!=="layout" && msg.type!=="hello"){
     /* status only for join/leave/deny */
   }
@@ -4977,7 +5032,13 @@ function relayOnMsg(raw){
     paintSeatPick();
   }
   if(msg.type==="snap" && msg.data){
-    if(net.role==="host") hostAcceptSnap(msg.data, function(o){ relaySend(o); });
+    if(net.shared){
+      net.board[clamp(msg.data.seat||1,1,8)-1]=msg.data;
+      net.taken[msg.data.seat]=msg.data.name||"사용중";
+      net._boardSig="";
+      renderBoard();
+      paintSeatPick();
+    } else if(net.role==="host") hostAcceptSnap(msg.data, function(o){ relaySend(o); });
   }
   if(msg.type==="occ" && msg.taken){
     net.taken=msg.taken;
@@ -5021,6 +5082,7 @@ function relayListen(){
   if(!net.code){ netLog("중계: 코드 없음"); return; }
   netLog("중계 연결 중 "+relayTopic(net.code));
   cfConnect();
+  if(net.shared) return;
   try{
     net.esList=[];
     relayBases().forEach(function(base){
@@ -5064,6 +5126,7 @@ function relayListen(){
 }
 function startSnapBeat(){
   if(net.hbSnap) clearInterval(net.hbSnap);
+  if(net.shared){ net.hbSnap=null; return; }
   net.hbSnap=setInterval(function(){ if(net.role==="player") publishSnap(); }, 8000);
 }
 function publishSnap(){
@@ -5085,7 +5148,7 @@ function broadcastLead(){
 }
 
 function cancelMythosToPrev(){
-  if(net.role!=="host") return;
+  if(!canControlBoard()) return;
   if(!net.mythos) return;
   setMythos(false);
   if((net.laps||0)>0) net.laps--;
@@ -5150,7 +5213,7 @@ function applySwap(a,b,lead,turn,opId){
   if(typeof render==="function") render();
 }
 function bindBoardDrag(){
-  if(net.role!=="host") return;
+  if(!canControlBoard()) return;
   const g=document.getElementById("boardGrid");
   if(!g) return;
   g.querySelectorAll(".bcard:not(.empty)").forEach(function(card){
@@ -5209,7 +5272,7 @@ function bindBoardDrag(){
   });
 }
 function bindBoardEditButtons(){
-  if(net.role!=="host") return;
+  if(!canControlBoard()) return;
   const g=document.getElementById("boardGrid");
   if(!g) return;
   g.querySelectorAll("[data-board-edit]").forEach(function(btn){
@@ -5226,7 +5289,7 @@ function ringOrder(){
 }
 
 function nextTurnCW(){
-  if(net.role!=="host") return;
+  if(!canControlBoard()) return;
   const ring=ringOrder();
   let idx=ring.indexOf(net.turn);
   if(idx<0) idx=0;
@@ -5237,7 +5300,7 @@ function nextTurnCW(){
   renderBoard();
 }
 function nextTurnCCW(){
-  if(net.role!=="host") return;
+  if(!canControlBoard()) return;
   const ring=ringOrder();
   let idx=ring.indexOf(net.turn);
   if(idx<0) idx=0;
@@ -5255,7 +5318,7 @@ function applyRemoteLead(seat, turn){
   if(typeof render==="function") render();
 }
 function setHostLead(i){
-  if(net.role!=="host") return;
+  if(!canControlBoard()) return;
   net._navLock=Date.now();
   net.lead=i;
   net.turn=i;
@@ -5504,7 +5567,7 @@ function paintBoardEditor(){
   pop.hidden=false;
 }
 function openBoardEditor(pos){
-  if(net.role!=="host") return;
+  if(!canControlBoard()) return;
   const data=net.board[pos];
   if(!data) return;
   const inv=INV.find(function(x){return x.id===data.invId;})||INV[0];
@@ -5519,7 +5582,7 @@ function openBoardEditor(pos){
   paintBoardEditor();
 }
 function hostApplyBoardEdit(draft){
-  if(net.role!=="host"||!draft) return;
+  if(!canControlBoard()||!draft) return;
   const data=net.board[draft.pos];
   if(!data) return;
   const inv=INV.find(function(x){return x.id===draft.invId;});
@@ -5532,7 +5595,7 @@ function hostApplyBoardEdit(draft){
   closeBoardEditor();
   net._boardSig="";
   renderBoard();
-  hostBroadcastOcc();
+  if(!net.shared) hostBroadcastOcc();
 }
 function slotSkillShown(slot,sk,part){
   const d=(slot.skills&&slot.skills[sk.id])||{};
@@ -5615,7 +5678,7 @@ function renderBoard(){
     if(!d){
       const closed=!seatIsOpen(i+1);
       html+='<div class="bcard empty'+(closed?" closed":"")+(isLead?" lead":"")+(isTurn?" turn":"")+'" data-pos="'+i+'" draggable="false"><div class="bhead"><div class="bno">'+(i+1)+'</div><div class="bwho"><div class="bn">'+(closed?"없음":("대기"+(isTurn?" · 차례":"")))+'</div></div></div><div class="bj">'+(closed?"자리 없음":"아직 입장 없음")+'</div>';
-      if(net.role==="host" && !closed) html+='<button type="button" class="blead" data-lead="'+i+'"><i class="fill"></i><span>'+(isLead?"대표":"대표 지정")+"</span></button>";
+      if(canControlBoard() && !closed) html+='<button type="button" class="blead" data-lead="'+i+'"><i class="fill"></i><span>'+(isLead?"대표":"대표 지정")+"</span></button>";
       html+="</div>";
       continue;
     }
@@ -5628,7 +5691,7 @@ function renderBoard(){
     html+='<div class="bwho"><div class="bn">'+d.name+(isTurn?" · 차례":"")+'</div>';
     html+='<div class="bloc'+locCls+'">'+locTxt+'</div></div>';
     html+='<div class="bpic"><div class="ph">'+((d.name||"?").slice(0,2))+'</div><img alt="" data-bimg="'+(d.invId||"")+'"></div>';
-    if(net.role==="host") html+='<button type="button" class="bedit" data-board-edit="'+i+'" aria-label="'+d.name+' 편집">⚙</button>';
+    if(canControlBoard()) html+='<button type="button" class="bedit" data-board-edit="'+i+'" aria-label="'+d.name+' 편집">⚙</button>';
     html+='</div>';
     html+='<div class="bskills">';
     SKILLS.forEach(function(sk){
@@ -5643,7 +5706,7 @@ function renderBoard(){
       html+='</div>';
     });
     html+="</div>";
-    if(net.role==="host") html+='<button type="button" class="blead" data-lead="'+i+'"><i class="fill"></i><span>'+(isLead?"대표":"대표 지정")+"</span></button>";
+    if(canControlBoard()) html+='<button type="button" class="blead" data-lead="'+i+'"><i class="fill"></i><span>'+(isLead?"대표":"대표 지정")+"</span></button>";
     html+="</div>";
   }
   g.innerHTML=html;
@@ -5744,7 +5807,7 @@ function setRoomSt(msg){
 function destroyPeer(){
   try{ if(net.peer) net.peer.destroy(); }catch(e){}
   relayStop();
-  net.peer=null; net.conns=[]; net.conn=null; net.role=null; net.code="";
+  net.peer=null; net.conns=[]; net.conn=null; net.role=null; net.shared=false; net.createOpen=null; net.code="";
 }
 const PEER_OPTS={
   host:"0.peerjs.com", port:443, path:"/", secure:true, debug:1,
@@ -5820,6 +5883,22 @@ function hostRoom(openSeats){
     });
   });
 }
+function createSharedRoom(openSeats){
+  destroyPeer();
+  net.code=roomCodeNew();
+  net.role="player";
+  net.shared=true;
+  net.createOpen=(openSeats&&openSeats.length)?openSeats.slice():[1,2,3,4,5,6,7,8];
+  net.openSeats=net.createOpen.slice();
+  net.board={}; net.taken={}; net.seats=[]; net.seat=1; net.pick={}; net.pickOrder=[]; net.claimed=false;
+  net.lead=net.openSeats[0]-1; net.turn=net.lead; net.laps=0; net.needNewLead=false; setMythos(false);
+  document.getElementById("roomCode").value=net.code;
+  document.getElementById("boardCode").textContent=net.code;
+  closeSeatPick();
+  setRoomSt("공유방 "+net.code+" 만드는 중…");
+  paintRoomChrome();
+  relayListen();
+}
 function seatsConflict(){
   const seats=net.pickOrder.filter(function(n){return net.pick[n]!=null;});
   const bad=seats.filter(function(n){ return net.taken && net.taken[n]; });
@@ -5832,7 +5911,7 @@ function seatsConflict(){
 }
 function paintRoomChrome(){
   const host=document.getElementById("roomHost");
-  if(host) host.style.display=(net.role==="player"||net.role==="host")?"none":"";
+  if(host) host.style.display=(net.role==="player"||net.role==="host"||net.role==="viewer")?"none":"";
 }
 
 function hostBroadcastOcc(){
@@ -5896,9 +5975,10 @@ function hostAcceptClaim(msg, reply){
 function joinRoom(){
   const code=(document.getElementById("roomCode").value||"").trim().toUpperCase();
   if(code.length<4){ setRoomSt("코드 4자를 입력"); return; }
-  if(net.role==="host"){ setRoomSt("방장은 전광판을 쓰세요"); return; }
+  destroyPeer();
   net.code=code;
   net.role="player";
+  net.shared=true;
   net.claimed=false;
   net.seats=[]; net.seat=1;
   net.pick={}; net.pickOrder=[];
@@ -5908,6 +5988,26 @@ function joinRoom(){
   relaySend({type:"hello"});
   openSeatPick("join");
 }
+function openSharedBoard(){
+  const code=(document.getElementById("roomCode").value||net.code||"").trim().toUpperCase();
+  if(code.length<4){ setRoomSt("전광판으로 볼 코드 4자를 입력하세요"); return; }
+  if(!(net.shared&&net.code===code&&net.role==="viewer")){
+    destroyPeer();
+    net.code=code;
+    net.role="viewer";
+    net.shared=true;
+    net.board={}; net.taken={}; net.claimed=true;
+    relayListen();
+    relaySend({type:"viewer", uid:net.uid});
+    relaySend({type:"hello"});
+  }
+  document.getElementById("boardCode").textContent=code;
+  document.getElementById("board").classList.add("on");
+  document.getElementById("roomPop").classList.remove("on");
+  setRoomSt("공유방 "+code+" · 전광판 연결 중…");
+  paintRoomChrome();
+  renderBoard();
+}
 function finishJoinWithPicks(){
   const seats=net.pickOrder.filter(function(n){return net.pick[n]!=null;});
   if(!seats.length){ setRoomSt("빈 자리를 고르세요"); return; }
@@ -5915,13 +6015,14 @@ function finishJoinWithPicks(){
   if(none.length){ setRoomSt(none[0]+"번은 자리가 없습니다"); return; }
   const busy=seats.filter(function(n){ return net.taken && net.taken[n] && net.pick[n]==null; });
   if(busy.length){ setRoomSt(busy[0]+"번 자리에 이미 조사자가 있습니다"); return; }
-  net.seats=seats; net.seat=seats[0]; net.claimed=true;
+  net.seats=seats; net.seat=seats[0]; net.claimed=!net.shared;
   closeSeatPick();
   document.getElementById("roomPop").classList.remove("on");
   setRoomSt(net.code+" · "+seats.join(",")+"번 입장 요청");
   relaySend({type:"claim", seats:seats, uid:net.uid});
   publishSnap();
   startSnapBeat();
+  if(net.shared) return;
   if(typeof Peer==="undefined") return;
   if(net.peer) return;
   const code=net.code;
@@ -5978,7 +6079,7 @@ document.getElementById("seatPickOk").onclick=function(e){
     const open=[];
     for(let n=1;n<=8;n++) if(net.draftOpen && net.draftOpen[n]) open.push(n);
     if(!open.length){ setRoomSt("자리를 하나 이상 고르세요"); return; }
-    hostRoom(open);
+    createSharedRoom(open);
     return;
   }
   finishJoinWithPicks();
@@ -5999,8 +6100,14 @@ document.getElementById("roomHost").onclick=function(){
   openSeatPick("host");
 };
 document.getElementById("roomBoard").onclick=function(){
-  if(net.role==="host") document.getElementById("board").classList.add("on");
-  else setRoomSt("먼저 대표방을 만드세요");
+  if(net.shared&&net.code){
+    document.getElementById("roomCode").value=net.code;
+    document.getElementById("boardCode").textContent=net.code;
+    document.getElementById("board").classList.add("on");
+    document.getElementById("roomPop").classList.remove("on");
+    net._boardSig="";
+    renderBoard();
+  } else openSharedBoard();
 };
 document.getElementById("roomJoin").onclick=function(){ joinRoom(); };
 (function(){
@@ -6010,11 +6117,7 @@ document.getElementById("roomJoin").onclick=function(){ joinRoom(); };
 })();
 document.getElementById("roomCode").addEventListener("change", function(){
   const code=(this.value||"").trim().toUpperCase();
-  if(code.length>=4 && !net.role){
-    net.code=code;
-    relayListen();
-    relaySend({type:"hello"});
-  }
+  this.value=code;
 });
 document.getElementById("roomLeave").onclick=function(){
   const seats=net.pickOrder && net.pickOrder.length?net.pickOrder.slice():(net.seats||[]);
@@ -6083,6 +6186,13 @@ document.addEventListener("click", function(e){
     document.getElementById("roomPop").classList.remove("on");
   }
 });
+(function(){
+  try{
+    if(new URLSearchParams(location.search).get("room-preview")==="1"){
+      document.getElementById("roomPop").classList.add("on");
+    }
+  }catch(e){}
+})();
 
 
 function fitSkillButtons(maxSize){
@@ -6754,7 +6864,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260921-d";
+const APP_VER="20260926-a";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;

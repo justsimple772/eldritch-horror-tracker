@@ -1,6 +1,6 @@
-const CACHE="eh-tracker-v47";
+const CACHE="eh-tracker-v48";
 const PORTRAITS=["akachi","charlie","diana","jacqueline","jim","leo","lily","lola","mark","norman","silas","trish","agnes","daisy","finn","george","patrice","tommy","ursula","wilson","marie","skids","tony","zoey","hank","harvey","joe","mandy","minh","monterey","rex","mary","jenny","dexter","michael","wendy","amanda","carolyn","darrell","gloria","kate","luke","vincent","william","ashcan","bob","rita","roland","agatha","calvin","carson","daniela","mateo","preston","sefina"].map(id=>"./img-original/"+id+".webp");
-const PRECACHE=["./","./index.html","./manifest.webmanifest","./mobile-ui.css?v=20260921-d","./icon-192.png","./icon-512.png","./apple-touch-icon.png"].concat(PORTRAITS);
+const PRECACHE=["./","./index.html","./manifest.webmanifest","./mobile-ui.css?v=20260926-a","./icon-192.png","./icon-512.png","./apple-touch-icon.png"].concat(PORTRAITS);
 self.addEventListener("install",event=>event.waitUntil(caches.open(CACHE).then(c=>c.addAll(PRECACHE)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>/^eh-tracker-v\d+$/.test(k)&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener("message",event=>{if(event.data&&event.data.type==="SKIP_WAITING") self.skipWaiting();});
