@@ -415,6 +415,8 @@ body.round-cursed .dice-celebrating .dice-face { border-color:#c682f2; backgroun
 .bd-result strong { font-size:1.4em; font-variant-numeric:tabular-nums; }
 .bd-result small { display:block; margin-top:4px; font-size:clamp(18px,2.5vw,32px); }
 .bd-close { position:absolute; z-index:4; top:clamp(12px,2.4vw,28px); right:clamp(12px,2.4vw,28px); width:clamp(42px,5vw,64px); height:clamp(42px,5vw,64px); border:2px solid currentColor; border-radius:50%; color:#f8fbff; background:rgba(0,0,0,.42); font-size:clamp(28px,4vw,44px); line-height:1; font-weight:400; }
+.board-dice,.bd-close,.bd-reopen,.bd-history { pointer-events:auto; touch-action:manipulation; -webkit-user-select:none; user-select:none; }
+.bd-close { cursor:pointer; }
 .board-dice.blessed .bd-close { color:#142832; background:rgba(255,255,255,.62); }
 .board-dice.blessed.celebrating .bd-close,.board-dice.blessed.shattered .bd-close { color:#f8fbff; background:rgba(0,0,0,.42); }
 .bd-reopen { position:fixed; z-index:91; right:clamp(14px,3vw,36px); bottom:clamp(14px,3vw,36px); min-height:48px; padding:10px 16px; border:2px solid #d8edf4; border-radius:999px; color:#f8fbff; background:#102d3be8; box-shadow:0 4px 16px #0008; font-size:clamp(15px,2.3vw,24px); font-weight:900; }

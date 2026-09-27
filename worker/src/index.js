@@ -149,6 +149,65 @@ export class Room extends DurableObject {
     await this.ctx.storage.setAlarm(this.room.updatedAt + ROOM_TTL_MS);
   }
 
+  async pruneOrphanedSeats() {
+    const active = new Set();
+    this.ctx.getWebSockets().forEach((socket) => {
+      try {
+        const attachment = socket.deserializeAttachment() || {};
+        if (attachment.uid && !attachment.viewer) active.add(attachment.uid);
+      } catch (_) {}
+    });
+    let changed = false;
+    Object.keys(this.room.board || {}).forEach((key) => {
+      const player = this.room.board[key];
+      if (player?.uid && !active.has(player.uid)) {
+        delete this.room.board[key];
+        changed = true;
+      }
+    });
+    if (changed) {
+      const manager = this.room.board[String((this.room.managerSeat || 1) - 1)];
+      if (!manager || manager.uid !== this.room.managerUid) {
+        const fallback = Object.values(this.room.board).find((player) => player?.uid);
+        this.room.managerUid = manager?.uid || fallback?.uid || "";
+      }
+      await this.persist();
+      this.broadcast(this.stateMessage());
+    }
+    return changed;
+  }
+
+  async releaseSocketSeats(ws) {
+    await this.ready;
+    let attachment = {};
+    try { attachment = ws.deserializeAttachment() || {}; } catch (_) {}
+    if (!attachment.uid || attachment.viewer) return;
+    let changed = false;
+    Object.keys(this.room.board || {}).forEach((key) => {
+      const player = this.room.board[key];
+      if (player?.uid === attachment.uid) {
+        delete this.room.board[key];
+        changed = true;
+      }
+    });
+    if (!changed) return;
+    const manager = this.room.board[String((this.room.managerSeat || 1) - 1)];
+    if (!manager || manager.uid !== this.room.managerUid) {
+      const fallback = Object.values(this.room.board).find((player) => player?.uid);
+      this.room.managerUid = manager?.uid || fallback?.uid || "";
+    }
+    await this.persist();
+    this.broadcast(this.stateMessage());
+  }
+
+  async webSocketClose(ws) {
+    await this.releaseSocketSeats(ws);
+  }
+
+  async webSocketError(ws) {
+    await this.releaseSocketSeats(ws);
+  }
+
   async webSocketMessage(ws, raw) {
     await this.ready;
     let message;
@@ -186,6 +245,7 @@ export class Room extends DurableObject {
     }
 
     if (message.type === "hello") {
+      await this.pruneOrphanedSeats();
       this.send(ws, this.stateMessage());
       return;
     }
@@ -203,6 +263,7 @@ export class Room extends DurableObject {
     }
 
     if (message.type === "claim") {
+      await this.pruneOrphanedSeats();
       const seats = cleanSeats(message.seats);
       const denied = this.validateSeats(seats, uid);
       if (denied) return this.send(ws, denied);
