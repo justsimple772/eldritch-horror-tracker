@@ -218,6 +218,7 @@ export class Room extends DurableObject {
       const seat = Number(data.seat);
       const denied = this.validateSeats([seat], uid || data.uid);
       if (denied) return this.send(ws, denied);
+      const previousManagerUid = this.room.managerUid;
       data.uid = uid || String(data.uid || "").slice(0, 80);
       data.seat = seat;
       data.t = Date.now();
@@ -234,7 +235,7 @@ export class Room extends DurableObject {
       await this.persist();
       this.send(ws, { type: "ok", uid: data.uid, seats: [seat] });
       this.broadcast({ type: "snap", data });
-      this.broadcast(this.stateMessage());
+      if (this.room.managerUid !== previousManagerUid) this.broadcast(this.stateMessage());
       return;
     }
 

@@ -3116,7 +3116,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="mobile-ui.css?v=20260926-b">
+<link rel="stylesheet" href="mobile-ui.css?v=20260927-a">
 </head>
 <body class="mobile-ui">
 <div id="stage">
@@ -4697,6 +4697,16 @@ function closeSeatPick(){
 function paintSeatPick(){
   const g=document.getElementById("seatPickGrid");
   if(!g) return;
+  const seatPickSig=JSON.stringify({
+    mode:net.pickMode||"",
+    open:(net.openSeats||[]).slice().sort(function(a,b){return a-b;}),
+    taken:net.taken||{},
+    draftOpen:net.draftOpen||{},
+    picked:net.pick||{},
+    names:Object.keys(net.pick||{}).map(function(n){return seatName(net.pick[n]);})
+  });
+  if(g.dataset.paintSig===seatPickSig && g.children.length===8) return;
+  g.dataset.paintSig=seatPickSig;
   let html="";
   for(let n=1;n<=8;n++){
     let cls="seatcell", label=String(n);
@@ -6977,7 +6987,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260926-b";
+const APP_VER="20260927-a";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;
