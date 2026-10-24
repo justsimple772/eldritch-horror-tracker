@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111a36">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>스크리블 타임 · 기억력 게임</title>
+<style>
+:root{color-scheme:dark;--bg:#0d142b;--panel:#182441;--panel2:#22304e;--edge:#344263;--white:#f6f8ff;--muted:#b0bed7;--accent:#9bb3ff;--teal:#8ce3cd;--orange:#ffd08f;--red:#ffadbc}*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:radial-gradient(circle at 75% 0%,#293b63 0%,transparent 40%),var(--bg);font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;color:var(--white);min-height:100dvh}main{max-width:540px;margin:0 auto;padding:calc(27px + env(safe-area-inset-top)) 18px calc(36px + env(safe-area-inset-bottom))}header{margin:0 3px 26px}header .eyebrow{color:var(--teal);letter-spacing:.14em;font-size:12px;font-weight:800}h1{font-size:clamp(29px,7vw,39px);letter-spacing:-.05em;margin:7px 0 9px}header p,p{line-height:1.6}.subtle{color:var(--muted);font-size:14px}.card{background:linear-gradient(160deg,rgba(36,49,81,.96),rgba(24,36,64,.98));border:1px solid var(--edge);border-radius:26px;padding:24px 21px;margin:17px 0;box-shadow:0 15px 45px #05091626}.section-title{font-size:22px;letter-spacing:-.04em;margin:0 0 15px}.field{margin:21px 0}.field-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.field-head label,.field>label{font-weight:700}.value{color:var(--teal);font-size:16px;font-weight:800}input[type=range]{width:100%;accent-color:#a3b9ff;margin:18px 0 5px;height:25px}.range-ends{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}select,input[type=text]{width:100%;border:1px solid #647495;background:#121d38;color:var(--white);padding:15px 16px;border-radius:13px;font-size:17px;outline:none}select:focus,input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px #8daeff25}select{margin-top:11px}button{font:inherit;border:0;border-radius:15px;min-height:49px;padding:13px 18px;font-weight:780;cursor:pointer;touch-action:manipulation}button.primary{background:linear-gradient(125deg,#a9c0ff,#a2e4e1);color:#111b31;width:100%;font-size:17px}button.secondary{background:#344565;color:var(--white)}button.outline{background:transparent;border:1px solid #657694;color:var(--white)}button.danger{color:#ffbecc}button:disabled{opacity:.4;cursor:not-allowed}.buttons{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}.buttons button{flex:1;min-width:115px}.check{display:flex;align-items:center;gap:10px;padding:12px 0;font-size:14px;color:#e9eeff}.check input{width:20px;height:20px;accent-color:#99d9c9}.help{color:var(--muted);font-size:13px;line-height:1.6}.pill{display:inline-block;border-radius:30px;padding:8px 12px;font-size:12px;font-weight:800;background:#304363;color:#c4d4ff}.centre{text-align:center}.number{font-size:clamp(68px,18vw,108px);font-weight:900;letter-spacing:-.09em;line-height:1.1;margin:23px 0 12px}.word-display{margin:13px 0 19px;font-size:24px;color:var(--teal);font-weight:800;min-height:35px}.icon-box{width:76px;height:76px;border-radius:27px;background:#364c71;display:grid;place-items:center;font-size:34px;margin:29px auto 15px}.bar{height:9px;background:#0d1730;border-radius:10px;overflow:hidden;margin:20px 0 8px}.fill{height:100%;background:linear-gradient(90deg,#88a8ff,#8ce3cd);width:0;transition:width .2s}.status{min-height:45px;font-size:14px;color:var(--muted);line-height:1.5;margin-top:17px}.answer-label{display:block;font-weight:700;margin:26px 0 10px}.answer{font-size:19px!important}.feedback{min-height:54px;margin-top:14px;font-size:15px;font-weight:650;line-height:1.5}.success{color:var(--teal)}.error{color:var(--red)}.hint{color:var(--orange)}.results{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:22px 0}.stat{background:#101b34;border-radius:17px;padding:17px 14px}.stat b{font-size:27px;display:block;margin-top:8px}.stat span{color:var(--muted);font-size:13px}.note{padding:12px 14px;border-radius:12px;background:#111d38;border:1px solid #314364;font-size:13px;line-height:1.65;color:#c7d4ec;margin:15px 0}.hidden{display:none!important}.footer{color:#8292b2;font-size:12px;text-align:center;margin-top:28px}#next{margin-top:5px}#replayTts{margin-top:6px}
+</style>
+</head>
+<body>
+<main>
+<header><div class="eyebrow">LISTEN · SKETCH · REMEMBER</div><h1>🧠 스크리블 타임</h1><p class="subtle">20개의 단어를 듣고, 번호와 함께 기억해 보세요.</p></header>
+<section id="setup" class="card"><h2 class="section-title">게임 설정</h2><div class="field"><div class="field-head"><label for="seconds">단어 사이 대기 시간</label><span class="value" id="secondsValue">2초</span></div><input type="range" id="seconds" min="1" max="15" value="2" step="1"><div class="range-ends"><span>빠르게 · 1초</span><span>여유롭게 · 15초</span></div><p class="help">단어를 <strong>끝까지 읽은 뒤</strong> 설정한 시간 동안 기다립니다.</p></div><div class="field"><label for="rate">TTS 읽기 속도</label><select id="rate"><option value="0.83">느리게</option><option value="1" selected>보통</option><option value="1.15">빠르게</option></select></div><label class="check"><input type="checkbox" id="visible"> 읽는 단어를 화면에도 표시</label><div class="note">원작 느낌의 단어를 자체 구성했습니다. 인물·사물·동물·장소·동작이 섞여 나오며 한 게임에 중복은 없습니다.</div><button id="start" class="primary">▶ 암기 시작</button><p class="help">아이폰에서는 소리를 켜고 사파리를 열어둔 상태로 플레이해 주세요. 음성은 기기 내 한국어 TTS를 사용합니다.</p></section>
+<section id="study" class="card hidden"><div class="centre"><span class="pill" id="studyProgress">1 / 20</span><div class="icon-box" aria-hidden="true">🔊</div><div class="number" id="currentNumber">1</div><div class="word-display" id="studyWord"></div><p class="status" id="studyStatus" role="status">읽는 중…</p></div><div class="bar"><div class="fill" id="fill"></div></div><div class="buttons"><button class="secondary" id="repeat">🔁 다시 듣기</button><button class="outline" id="manualNext">다음 단어 →</button></div><button class="outline danger" id="stop" style="width:100%;margin-top:10px">게임 중단</button><p class="help">음성이 멈추면 '다시 듣기'를 누르세요. 자동 진행이 안 될 때는 '다음 단어'로 이어갈 수 있어요.</p></section>
+<section id="ready" class="card hidden centre"><div class="icon-box">✨</div><h2 class="section-title">암기 완료!</h2><p class="subtle">20개의 단어를 다 들었어요.<br>준비되면 무작위 번호 테스트를 시작하세요.</p><button id="testStart" class="primary">🎯 테스트 시작</button></section>
+<section id="quiz" class="card hidden"><div class="centre"><span id="questionProgress" class="pill">문제 1 / 20</span><div id="questionNumber" class="number">13</div><p class="subtle">이 번호에 해당하는 단어는?</p></div><label for="answer" class="answer-label">정답 입력</label><input type="text" id="answer" class="answer" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="단어를 입력하세요"><div class="buttons"><button class="primary" style="min-width:130px" id="check">정답 확인</button><button class="secondary" id="reveal">답 공개</button></div><div id="feedback" class="feedback" role="status" aria-live="polite"></div><button id="next" class="primary hidden">다음 문제 →</button></section>
+<section id="result" class="card hidden"><div class="centre"><div class="icon-box">🏁</div><h2 class="section-title">테스트 완료!</h2><p class="subtle">20개 번호를 모두 확인했어요.</p></div><div class="results"><div class="stat"><span>첫 시도 정답</span><b id="firstScore">0/20</b></div><div class="stat"><span>첫 시도 정답률</span><b id="firstRate">0%</b></div><div class="stat"><span>재시도 후 정답</span><b id="retryScore">0</b></div><div class="stat"><span>답 공개</span><b id="revealedScore">0</b></div></div><button id="again" class="primary">🔄 새로운 단어로 다시하기</button></section>
+<p class="footer">비공식 팬 메이드 기억력 연습 도구 · 인터넷 없이도 작동하는 단일 HTML</p>
+</main>
+<script>
+'use strict';
+// 원작 카드의 실제 제시어가 아니라, 빠르게 그림으로 표현하기 좋은 독자적인 목록.
+const BANK=[
+`사과 바나나 수박 복숭아 포도 귤 파인애플 레몬 딸기 옥수수 고구마 당근 양배추 버섯 브로콜리 고추 마늘 케이크 도넛 햄버거 피자 라면 김밥 초밥 아이스크림 초콜릿 우유 주스 꿀단지 컵라면 달걀 식빵 커피 주전자 찻잔 냄비 프라이팬 숟가락 젓가락 접시 포크 식탁 냉장고 전자레인지 토스터기 도시락 머그잔 와인잔 소금통 설탕병 국자`,
+`강아지 고양이 코끼리 기린 사자 호랑이 판다 토끼 다람쥐 악어 펭귄 돌고래 고래 문어 오징어 상어 거북이 낙타 얼룩말 하마 원숭이 코알라 앵무새 부엉이 독수리 닭 오리 공작새 뱀 도마뱀 개구리 무당벌레 나비 잠자리 벌 거미 개미 달팽이 해파리 불가사리 꽃게 새우 물개 물고기 고슴도치 박쥐 공룡 드래곤 유니콘 햄스터`,
+`자동차 자전거 버스 택시 기차 지하철 비행기 헬리콥터 로켓 우주선 배 돛단배 잠수함 스쿠터 오토바이 유모차 트럭 소방차 구급차 경찰차 신호등 횡단보도 터널 다리 등대 학교 병원 도서관 우체국 마트 극장 놀이공원 운동장 공항 기차역 버스정류장 주차장 공중전화 엘리베이터 에스컬레이터 계단 공원 성당 성 탑 피라미드 텐트 오두막 풍차 분수대`,
+`우산 모자 신발 운동화 장화 양말 목도리 장갑 안경 선글라스 가방 지갑 열쇠 자물쇠 시계 손목시계 거울 빗 드라이기 칫솔 치약 비누 수건 샴푸 침대 베개 이불 의자 책상 연필 지우개 가위 풀 테이프 책 공책 편지 우체통 컴퓨터 노트북 휴대전화 카메라 텔레비전 라디오 이어폰 헤드폰 마이크 리모컨 손전등 돋보기`,
+`축구공 농구공 야구공 골프채 배드민턴라켓 줄넘기 스케이트보드 수영모 오리발 트로피 메달 피아노 바이올린 기타 드럼 트럼펫 하모니카 악보 마술지팡이 풍선 선물상자 리본 생일케이크 양초 크리스마스트리 눈사람 썰매 연 바람개비 비눗방울 불꽃놀이 모래성 모래시계 나침반 지도 망원경 현미경 로봇 인형 장난감기차 레고블록 주사위 퍼즐 요요 팽이 회전목마 관람차 롤러코스터 미끄럼틀 그네`,
+`태양 달 별 무지개 구름 번개 소나기 눈송이 회오리바람 화산 산 강 폭포 바다 파도 섬 사막 숲 나무 소나무 야자수 벚꽃 해바라기 장미 선인장 버섯집 잎사귀 도토리 조개 산호 얼음산 동굴 바위 분화구 유성 우주비행사 외계인 보물상자 해적 왕관 왕좌 기사 검 방패 활 화살 깃발 묘비 유령 눈물 웃는얼굴 발자국 손바닥` 
+].map(s=>s.split(' '));
+const $=id=>document.getElementById(id);
+const panels=['setup','study','ready','quiz','result'];
+let words=[],sequence=[],studyIndex=-1,questionIndex=0,attempts=0,first=0,retried=0,revealed=0,locked=false;
+let generation=0,timer=null,activeUtterance=null,wakeLock=null;
+const synth=('speechSynthesis' in window)?window.speechSynthesis:null;
+function show(id){panels.forEach(k=>$(k).classList.toggle('hidden',k!==id));window.scrollTo({top:0,behavior:'instant'});}
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+function makeWords(){const picked=[];BANK.forEach(group=>picked.push(...shuffle([...group]).slice(0,4)));return shuffle(picked).slice(0,20);}
+function clearSpeech(){generation++;if(timer!==null){clearTimeout(timer);timer=null;}if(synth){try{synth.cancel();}catch(_){}}activeUtterance=null;}
+async function keepAwake(){try{if('wakeLock' in navigator&&!wakeLock)wakeLock=await navigator.wakeLock.request('screen');}catch(_){}}
+async function releaseAwake(){try{if(wakeLock)await wakeLock.release();}catch(_){}wakeLock=null;}
+$('seconds').addEventListener('input',()=>{$('secondsValue').textContent=$('seconds').value+'초';});
+function nextStudy(){if(studyIndex>=19){clearSpeech();releaseAwake();show('ready');return;}studyIndex++;readCurrent();}
+function readCurrent(){
+  clearSpeech();const thisRun=generation;
+  const n=studyIndex+1;
+  $('studyProgress').textContent=`${n} / 20`;
+  $('currentNumber').textContent=n;
+  $('studyWord').textContent=$('visible').checked?words[studyIndex]:'';
+  $('fill').style.width=`${n/20*100}%`;
+  $('studyStatus').textContent=`${n}번 단어 읽는 중…`;
+  if(!synth||!('SpeechSynthesisUtterance' in window)){$('studyStatus').textContent='이 브라우저는 음성 읽기를 지원하지 않습니다. 다른 브라우저에서 시도하세요.';return;}
+  const utterance=new SpeechSynthesisUtterance(`${n}번, ${words[studyIndex]}`);
+  activeUtterance=utterance;
+  utterance.lang='ko-KR';utterance.rate=Number($('rate').value);utterance.pitch=1;
+  const v=synth.getVoices().find(v=>v.lang.toLowerCase().startsWith('ko'));
+  if(v)utterance.voice=v;
+  utterance.onend=()=>{
+    if(thisRun!==generation)return;
+    activeUtterance=null;
+    const delay=Number($('seconds').value);
+    $('studyStatus').textContent=`읽기 완료 · ${delay}초 쉬고 다음 단어로`; 
+    // B 방식: 발화(onend)가 끝난 이후에만 대기 시간이 시작된다.
+    timer=window.setTimeout(()=>{if(thisRun!==generation)return;timer=null;nextStudy();},delay*1000);
+  };
+  utterance.onerror=(e)=>{if(thisRun!==generation)return;activeUtterance=null;$('studyStatus').textContent='음성을 재생하지 못했어요. 다시 듣기 또는 다음 단어를 눌러 주세요.';};
+  try{synth.speak(utterance);}catch(_){$('studyStatus').textContent='음성 재생 실패. 다시 듣기를 눌러 주세요.';}
+}
+$('start').onclick=()=>{
+  clearSpeech();words=makeWords();studyIndex=0;show('study');keepAwake();readCurrent();
+};
+$('repeat').onclick=()=>{if(studyIndex>=0&&studyIndex<20)readCurrent();};
+$('manualNext').onclick=()=>{clearSpeech();nextStudy();};
+$('stop').onclick=()=>{clearSpeech();releaseAwake();show('setup');};
+$('testStart').onclick=()=>{
+  clearSpeech();sequence=shuffle(Array.from({length:20},(_,i)=>i));questionIndex=0;first=0;retried=0;revealed=0;show('quiz');newQuestion();
+};
+function newQuestion(){locked=false;attempts=0;$('questionProgress').textContent=`문제 ${questionIndex+1} / 20`;$('questionNumber').textContent=sequence[questionIndex]+1;$('answer').value='';$('answer').disabled=false;$('check').disabled=false;$('reveal').disabled=false;$('feedback').textContent='';$('feedback').className='feedback';$('next').classList.add('hidden');}
+function normalize(input){return input.normalize('NFC').toLocaleLowerCase('ko-KR').replace(/[\s\u00a0.,!?~·\-]/g,'');}
+function seal(){locked=true;$('answer').disabled=true;$('check').disabled=true;$('reveal').disabled=true;$('next').textContent=questionIndex===19?'결과 보기 →':'다음 문제 →';$('next').classList.remove('hidden');}
+$('check').onclick=()=>{
+  if(locked)return;
+  const typed=normalize($('answer').value);
+  if(!typed){$('feedback').textContent='정답을 입력해 주세요.';$('feedback').className='feedback hint';return;}
+  if(typed===normalize(words[sequence[questionIndex]])){
+    if(attempts===0)first++;else retried++;
+    $('feedback').textContent=attempts===0?'✅ 정답입니다!':'✅ 재시도 성공!';$('feedback').className='feedback success';seal();
+  }else{attempts++;$('feedback').textContent='❌ 틀렸습니다. 다시 입력하거나 정답을 공개하세요.';$('feedback').className='feedback error';$('answer').focus();$('answer').select();}
+};
+$('reveal').onclick=()=>{if(locked)return;revealed++;$('feedback').textContent=`💡 정답은 “${words[sequence[questionIndex]]}” 입니다.`;$('feedback').className='feedback hint';seal();};
+$('answer').addEventListener('keydown',e=>{if(e.key!=='Enter')return;e.preventDefault();if(!locked)$('check').click();else $('next').click();});
+$('next').onclick=()=>{if(!locked)return;questionIndex++;if(questionIndex===20){$('firstScore').textContent=`${first}/20`;$('firstRate').textContent=`${Math.round(first/20*100)}%`;$('retryScore').textContent=retried;$('revealedScore').textContent=revealed;show('result');}else newQuestion();};
+$('again').onclick=()=>{clearSpeech();show('setup');};
+document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseAwake();else if(!$('study').classList.contains('hidden'))keepAwake();});
+</script>
+</body>
+</html>
