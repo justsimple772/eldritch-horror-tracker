@@ -7,7 +7,7 @@ const root=require('node:path').resolve(__dirname,'..');
 const source=fs.readFileSync(root+'/worker/src/index.js','utf8')
   .replace('import { DurableObject } from "cloudflare:workers";', 'class DurableObject {}')
   .replace('export default {','const worker = {').replace('export class Room','class Room');
-const sandbox={Response,Date,TextDecoder};
+const sandbox={Response,Date,TextDecoder,crypto:require('node:crypto').webcrypto};
 vm.runInNewContext(source+'\nglobalThis.Room=Room;',sandbox);
 const sockets=[], messages=[];
 const ctx={blockConcurrencyWhile:fn=>fn(),storage:{get:async()=>null,put:async()=>{},setAlarm:async()=>{}},getWebSockets:()=>sockets};

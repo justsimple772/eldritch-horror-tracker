@@ -2,6 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 
 const ROOM_TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_SEATS = 8;
+const RECONNECT_GRACE_MS = 90 * 1000;
 
 function cleanCode(value) {
   return String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
@@ -126,6 +127,9 @@ export class Room extends DurableObject {
   }
 
   validateSeats(seats, uid) {
+    if (!uid || !seats.length || seats.some((seat) => !Number.isInteger(seat) || seat < 1 || seat > MAX_SEATS)) {
+      return { type: "deny", reason: "none", uid };
+    }
     const none = seats.find((seat) => !this.room.open.includes(seat));
     if (none) return { type: "deny", reason: "none", seat: none, uid };
     const busy = seats.find((seat) => {
@@ -146,7 +150,12 @@ export class Room extends DurableObject {
   async persist() {
     this.room.updatedAt = Date.now();
     await this.ctx.storage.put("room", this.room);
-    await this.ctx.storage.setAlarm(this.room.updatedAt + ROOM_TTL_MS);
+    await this.scheduleAlarm();
+  }
+
+  async scheduleAlarm() {
+    const deadlines = Object.values(this.room.board).map((p) => p?.disconnectedUntil).filter(Boolean);
+    await this.ctx.storage.setAlarm(Math.min(this.room.updatedAt + ROOM_TTL_MS, ...deadlines));
   }
 
   async pruneOrphanedSeats() {
@@ -154,15 +163,20 @@ export class Room extends DurableObject {
     this.ctx.getWebSockets().forEach((socket) => {
       try {
         const attachment = socket.deserializeAttachment() || {};
-        if (attachment.uid && !attachment.viewer) active.add(attachment.uid);
+        if (attachment.uid && !attachment.viewer && !attachment.left) active.add(attachment.sessionId || attachment.uid);
       } catch (_) {}
     });
     let changed = false;
     Object.keys(this.room.board || {}).forEach((key) => {
       const player = this.room.board[key];
-      if (player?.uid && !active.has(player.uid)) {
-        delete this.room.board[key];
-        changed = true;
+      if (player?.uid && !active.has(player.sessionId || player.uid)) {
+        if (!player.disconnectedUntil) {
+          player.disconnectedUntil = Date.now() + RECONNECT_GRACE_MS;
+          changed = true;
+        } else if (player.disconnectedUntil <= Date.now()) {
+          delete this.room.board[key];
+          changed = true;
+        }
       }
     });
     if (changed) {
@@ -185,8 +199,9 @@ export class Room extends DurableObject {
     let changed = false;
     Object.keys(this.room.board || {}).forEach((key) => {
       const player = this.room.board[key];
-      if (player?.uid === attachment.uid) {
-        delete this.room.board[key];
+      if (player?.uid === attachment.uid && (!player.sessionId || player.sessionId === attachment.sessionId)) {
+        // A temporary network loss must not hand the seat to someone else.
+        player.disconnectedUntil = Date.now() + RECONNECT_GRACE_MS;
         changed = true;
       }
     });
@@ -215,6 +230,12 @@ export class Room extends DurableObject {
     if (!message || typeof message !== "object") return;
     const uid = String(message.uid || message.from || "").slice(0, 80);
     const attachment = ws.deserializeAttachment() || { uid: "", viewer: false };
+    if (!attachment.sessionId) {
+      attachment.sessionId = crypto.randomUUID();
+      ws.serializeAttachment(attachment);
+    }
+    // A socket's identity cannot change midway through a room session.
+    if (attachment.uid && uid && attachment.uid !== uid) return;
     if (uid && attachment.uid !== uid) {
       attachment.uid = uid;
       ws.serializeAttachment(attachment);
@@ -269,8 +290,20 @@ export class Room extends DurableObject {
       if (denied) return this.send(ws, denied);
       attachment.uid = uid;
       attachment.seats = seats;
+      attachment.viewer = false;
+      attachment.left = false;
       ws.serializeAttachment(attachment);
+      // Reserve all requested seats before acknowledging. A later claim must
+      // see this reservation even if the first snapshot has not arrived yet.
+      seats.forEach((seat) => {
+        const key = String(seat - 1);
+        const previous = this.room.board[key];
+        this.room.board[key] = { ...(previous || { seat, uid, name: "입장 중", skills: {} }), sessionId: attachment.sessionId };
+        delete this.room.board[key].disconnectedUntil;
+      });
+      await this.persist();
       this.send(ws, { type: "ok", uid, seats });
+      this.broadcast(this.stateMessage());
       return;
     }
 
@@ -279,9 +312,15 @@ export class Room extends DurableObject {
       const seat = Number(data.seat);
       const denied = this.validateSeats([seat], uid || data.uid);
       if (denied) return this.send(ws, denied);
+      const reserved = this.room.board[String(seat - 1)];
+      if (attachment.viewer || attachment.left || !reserved || reserved.uid !== uid || reserved.sessionId !== attachment.sessionId) {
+        return this.send(ws, { type: "deny", reason: "permission", action: "snap", uid });
+      }
       const previousManagerUid = this.room.managerUid;
       data.uid = uid || String(data.uid || "").slice(0, 80);
       data.seat = seat;
+      data.sessionId = attachment.sessionId;
+      delete data.disconnectedUntil;
       data.t = Date.now();
       this.room.board[String(seat - 1)] = data;
       if (seat === (this.room.managerSeat || 1)) this.room.managerUid = data.uid;
@@ -294,19 +333,21 @@ export class Room extends DurableObject {
         }
       }
       await this.persist();
-      this.send(ws, { type: "ok", uid: data.uid, seats: [seat] });
+      this.send(ws, { type: "snapAck", uid: data.uid, seats: [seat] });
       this.broadcast({ type: "snap", data });
       if (this.room.managerUid !== previousManagerUid) this.broadcast(this.stateMessage());
       return;
     }
 
     if (message.type === "leave") {
-      const seats = cleanSeats(message.seats);
+      if (attachment.viewer) return;
       Object.keys(this.room.board).forEach((key) => {
         const player = this.room.board[key];
-        const seat = Number(key) + 1;
-        if ((uid && player && player.uid === uid) || seats.includes(seat)) delete this.room.board[key];
+        if (uid && player?.uid === uid && player.sessionId === attachment.sessionId) delete this.room.board[key];
       });
+      attachment.left = true;
+      attachment.seats = [];
+      ws.serializeAttachment(attachment);
       await this.persist();
       this.broadcast(this.stateMessage());
       return;
@@ -368,9 +409,10 @@ export class Room extends DurableObject {
 
   async alarm() {
     await this.ready;
+    await this.pruneOrphanedSeats();
     const idleFor = Date.now() - (this.room.updatedAt || 0);
     if (idleFor < ROOM_TTL_MS) {
-      await this.ctx.storage.setAlarm(Date.now() + (ROOM_TTL_MS - idleFor));
+      await this.scheduleAlarm();
       return;
     }
     this.ctx.getWebSockets().forEach((socket) => {

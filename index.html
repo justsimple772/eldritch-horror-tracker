@@ -4702,11 +4702,11 @@ document.addEventListener("click", function(e){
 const ROOM_PREFIX="ehtrk-";
 function roomUid(){
   let id="";
-  try{ id=localStorage.getItem("eh-room-device-uid")||sessionStorage.getItem("eh-room-uid")||""; }catch(e){}
+  try{ id=sessionStorage.getItem("eh-room-tab-uid")||""; }catch(e){}
   if(!id){
     id="u"+Math.random().toString(36).slice(2,10);
   }
-  try{ localStorage.setItem("eh-room-device-uid",id); sessionStorage.setItem("eh-room-uid",id); }catch(e){}
+  try{ sessionStorage.setItem("eh-room-tab-uid",id); }catch(e){}
   return id;
 }
 const net={ gone:{}, uid:roomUid(), role:null, shared:false, createOpen:null, code:"", peer:null, es:null, conns:[], board:{}, seat:1, conn:null, lead:0, turn:0, laps:0, mythos:false, controlMode:"anyone", managerUid:"", managerSeat:1, sharedDiceHistory:[] };
@@ -5025,6 +5025,7 @@ function cfConnect(){
     const ws=new WebSocket(u);
     net.cfws=ws;
     ws.onopen=function(){
+      if(net.cfws!==ws) return;
       if(net.claimTimer) clearInterval(net.claimTimer);
       setRoomSt((net.shared?"공유방 연결됨 ":"CF 연결됨 ")+(net.code||""));
       (net.cfq||[]).forEach(function(b){ try{ ws.send(b); }catch(e){} });
@@ -5032,18 +5033,19 @@ function cfConnect(){
       if(net.shared && net.createOpen) relaySend({type:"create", open:net.createOpen, controlMode:net.controlMode, managerSeat:net.managerSeat, uid:net.uid});
       relaySend({type:"hello"});
       if(net.role==="player" && net.seats && net.seats.length){
+        net.claimed=false;
         relaySend({type:"claim", seats:net.seats, uid:net.uid});
-        publishSnap();
         startSnapBeat();
       }
       if(net.shared && net.role==="viewer") relaySend({type:"viewer", uid:net.uid});
       if(net.role==="host") hostBroadcastOcc();
     };
-    ws.onmessage=function(ev){ relayHandleLine(ev.data); };
+    ws.onmessage=function(ev){ if(net.cfws===ws) relayHandleLine(ev.data); };
     ws.onerror=function(){};
     ws.onclose=function(){
+      if(net.cfws!==ws) return;
       net.cfws=null;
-      if(net.role && cfBase()) setTimeout(cfConnect, 2000);
+      if(net.role && cfBase()) net.cfReconnectTimer=setTimeout(cfConnect, 2000);
     };
   }catch(e){ setRoomSt("CF 연결 실패"); }
 }
@@ -5051,6 +5053,7 @@ function relayTopic(code){ return "ehtrk8"+String(code||"").toLowerCase().replac
 function relayBases(){ return ["https://ntfy.sh","https://ntfy.adminforge.de","https://ntfy.tedomum.net"]; }
 function relayUrl(code, base){ return (base||relayBases()[0])+"/"+relayTopic(code); }
 function relayStop(){
+  clearTimeout(net.cfReconnectTimer);
   try{ if(net.cfws){ net.cfws.onclose=null; net.cfws.close(); } }catch(e){}
   net.cfws=null;
   if(net.es){ try{ net.es.close(); }catch(e){} net.es=null; }
@@ -5066,6 +5069,8 @@ function relaySend(msg){
   if(net.cfws && net.cfws.readyState===1){
     try{ net.cfws.send(body); }catch(e){}
   } else {
+    // Snapshots are regenerated after the reconnect claim is acknowledged.
+    if(msg.type==="snap"){ cfConnect(); return; }
     net.cfq=net.cfq||[];
     net.cfq.push(body);
     cfConnect();
@@ -6902,7 +6907,7 @@ document.getElementById("roomManagerSeat").addEventListener("change",function(){
 document.getElementById("roomLeave").onclick=function(){
   const seats=net.pickOrder && net.pickOrder.length?net.pickOrder.slice():(net.seats||[]);
   const pack={type:"leave", seats:seats, uid:net.uid};
-  try{ relaySend(pack); relaySend(pack); }catch(e){}
+  try{ relaySend(pack); }catch(e){}
   if(net.conn && net.conn.open) try{ net.conn.send(pack); }catch(e){}
   (net.conns||[]).forEach(function(c){ if(c&&c.open) try{ c.send(pack); }catch(e){} });
   if(net.role==="host"){
@@ -6913,14 +6918,12 @@ document.getElementById("roomLeave").onclick=function(){
     renderBoard();
     hostBroadcastOcc();
   }
-  setRoomSt("퇴장 전송 중…");
-  setTimeout(function(){
-    try{ relaySend(pack); }catch(e){}
-    destroyPeer();
-    paintRoomChrome();
-    document.getElementById("board").classList.remove("on");
-    setRoomSt("로컬만 사용 중");
-  }, 900);
+  // WebSocket.close flushes already queued messages. Delayed duplicate leaves
+  // can remove a newly joined session or close its connection.
+  destroyPeer();
+  paintRoomChrome();
+  document.getElementById("board").classList.remove("on");
+  setRoomSt("로컬만 사용 중");
 };
 document.getElementById("boardBack").onclick=function(){
   closeBoardEditor();
@@ -7648,7 +7651,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20261108-b";
+const APP_VER="20261108-c";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;
