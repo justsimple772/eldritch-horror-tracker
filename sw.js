@@ -1,4 +1,4 @@
-const CACHE="eh-tracker-v52";
+const CACHE="eh-tracker-v53";
 const PORTRAITS=["akachi","charlie","diana","jacqueline","jim","leo","lily","lola","mark","norman","silas","trish","agnes","daisy","finn","george","patrice","tommy","ursula","wilson","marie","skids","tony","zoey","hank","harvey","joe","mandy","minh","monterey","rex","mary","jenny","dexter","michael","wendy","amanda","carolyn","darrell","gloria","kate","luke","vincent","william","ashcan","bob","rita","roland","agatha","calvin","carson","daniela","mateo","preston","sefina"].map(id=>"./img-original/"+id+".webp");
 const PRECACHE=["./","./index.html","./manifest.webmanifest","./screen-awake.js?v=20261108-a","./mobile-ui.css?v=20260927-c","./icon-192.png","./icon-512.png","./apple-touch-icon.png"].concat(PORTRAITS);
 self.addEventListener("install",event=>event.waitUntil(caches.open(CACHE).then(c=>c.addAll(PRECACHE)).then(()=>self.skipWaiting())));

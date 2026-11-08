@@ -4726,10 +4726,12 @@ function roomCodeNew(){
 net.pick={}; net.pickOrder=[]; net.taken={};
 function slotOrder(){
   const n=Math.max(party.size||1,1), lead=party.lead||0, arr=[];
+  // The investigator on screen is the first one the player is joining with.
+  if(party.slots[party.active] && party.slots[party.active].invId) arr.push(party.active);
   for(let i=0;i<n;i++){
     const idx=(lead+i)%n;
     const sl=party.slots[idx];
-    if(sl && sl.invId) arr.push(idx);
+    if(sl && sl.invId && arr.indexOf(idx)<0) arr.push(idx);
   }
   return arr;
 }
@@ -5221,7 +5223,9 @@ function relayOnMsg(raw){
   if(msg.type==="claim" && net.role==="host"){
     hostAcceptClaim(msg, function(o){ relaySend(o); });
   }
-  if(msg.type==="ok" && net.role==="player" && (!msg.uid || msg.uid===net.uid)){
+  // The relay also acknowledges every snapshot with "ok". Only the initial
+  // seat claim should trigger a snapshot; replying to snapshot ACKs loops forever.
+  if(msg.type==="ok" && net.role==="player" && !net.claimed && net.seats.length && (!msg.uid || msg.uid===net.uid)){
     net.claimed=true;
     setRoomSt(net.code+" · "+(net.seats||[]).join(",")+"번 입장");
     closeSeatPick();
@@ -5337,7 +5341,8 @@ function startSnapBeat(){
 function publishSnap(){
   if(!net.code || net.role==="host") return;
   if(net.role!=="player") return;
-  const seats=net.pickOrder && net.pickOrder.length?net.pickOrder.filter(function(n){return net.pick[n]!=null;}):(net.seats&&net.seats.length?net.seats:[net.seat||1]);
+  if(net.shared && !net.claimed) return;
+  const seats=(net.seats||[]).filter(function(n){return net.pick[n]!=null;});
   seats.forEach(function(seat, i){
     const slotIdx=net.pick && net.pick[seat]!=null?net.pick[seat]:Math.min(i, party.slots.length-1);
     const data=snapNow(slotIdx, seat);
@@ -6563,6 +6568,7 @@ function setRoomSt(msg){
 function destroyPeer(){
   try{ if(net.peer) net.peer.destroy(); }catch(e){}
   relayStop();
+  net.cfq=[];
   net.peer=null; net.conns=[]; net.conn=null; net.role=null; net.shared=false; net.createOpen=null; net.code="";
 }
 const PEER_OPTS={
@@ -6805,7 +6811,7 @@ function finishJoinWithPicks(){
       if(msg.type==="deny"){
         setRoomSt(msg.reason==="busy"?(msg.seat+"번 이미 있음"):(msg.seat+"번은 자리 없음"));
       }
-      if(msg.type==="ok"){ net.claimed=true; publishSnap(); startSnapBeat(); }
+      if(msg.type==="ok" && !net.claimed){ net.claimed=true; publishSnap(); startSnapBeat(); }
       if(msg.type==="lead") applyRemoteLead(msg.seat||0, msg.turn);
       if(msg.type==="swap") applySwap(msg.a, msg.b, msg.lead, msg.turn, msg.opId);
       if(msg.type==="boardEdit") applyRemoteBoardEdit(msg);
@@ -7642,7 +7648,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20261108-a";
+const APP_VER="20261108-b";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;
