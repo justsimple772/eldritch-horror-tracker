@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#140E0C">
 <meta name="apple-mobile-web-app-title" content="엘드리치">
 <link rel="manifest" href="manifest.webmanifest">
@@ -7642,7 +7642,7 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"}).catch(function(){});
   });
 }
-const APP_VER="20260927-c";
+const APP_VER="20261108-a";
 let updateBusy=false;
 async function applyAppUpdate(){
   if(updateBusy) return;
@@ -7702,6 +7702,7 @@ async function applyAppUpdate(){
   };
 })();;
 </script>
+<script src="./screen-awake.js?v=20261108-a"></script>
 </div>
 </body>
 </html>

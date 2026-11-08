@@ -4,7 +4,7 @@
   "description": "엘드리치 호러 조사자 수치·전광판 트래커",
   "start_url": "./",
   "scope": "./",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "any",
   "background_color": "#140E0C",
   "theme_color": "#140E0C",
