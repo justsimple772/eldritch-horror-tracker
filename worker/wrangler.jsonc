@@ -3,6 +3,12 @@
   "name": "eh-relay",
   "main": "src/index.js",
   "compatibility_date": "2026-09-18",
+  "exports": {
+    "Room": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
+  },
   "durable_objects": {
     "bindings": [
       {
